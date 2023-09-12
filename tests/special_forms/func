@@ -1,0 +1,26 @@
+# Func: Correct
+## function fabrica: TBD
+## returns TBD: null | created function atom
+## process creation TBD: setq
+
+(setq global 10)
+(func funcName () (
+    (setq x 1)
+    x # 1
+    global # 10
+    undefinedAtom # TBD: see setq
+    ((lambda () 
+        (setq undefinedAtom 12)
+    ))
+    undefinedAtom # 12
+))
+undefinedAtom # TBD: see setq
+x # undefined TBD: see setq
+funcName # -> operations in func -> (setqreturn 1 10 undefinedAtomreturn setqreturn 12)
+
+(func cube (arg1) (times (times arg1 arg1) arg1))
+(cube 10) # -> (times (times 10 10) 10) -> (times 100 10) -> 1000
+
+## function fabrica: TBD
+
+((id func) (id atom) (id body)) -> (func atom body) -> creating function

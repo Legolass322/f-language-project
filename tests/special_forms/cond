@@ -1,0 +1,6 @@
+# Cond: Correct
+
+(cond true value1 value2)   # -> value1
+(cond false value1 value2)  # -> value2
+(cond true value1)          # -> value1
+(cond false value1)         # -> null

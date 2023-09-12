@@ -1,0 +1,11 @@
+# Types
+Integer/Real/Boolean -> Boolean
+
+# Not lazy!!!
+
+equal
+nonequal
+less
+lesseq
+greater
+greatereq

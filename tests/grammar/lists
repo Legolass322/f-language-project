@@ -1,0 +1,9 @@
+# Lists: Correct
+## empty list TBD: () for now
+
+()
+(1)
+(1 2 3 4)
+(-1.0 2)
+(4 EInList1 EInList2)
+(4 func not to be exucted)

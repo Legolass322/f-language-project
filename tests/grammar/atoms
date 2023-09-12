@@ -1,0 +1,14 @@
+# Atoms: Correct
+## notConsideredAtom TBD: 
+##     TBC: null | address
+
+notConsideredAtom # -> TBD
+
+(setq x 5)
+x # -> 5
+
+(setq x (plus 1 2))
+x # -> 3
+
+(setq x (quote (its not to be executed)))
+x # -> (its not to be executed) -> execution of atoms

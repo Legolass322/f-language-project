@@ -1,0 +1,14 @@
+# Setq: Correct
+## Context dependent
+## returns TBD: null | created atom
+
+(setq x 1) # %> [1->x]
+(setq x 2) # %> [2->x]
+
+(setq x 2)
+x # 2
+(lambda () (
+    (setq x 1)
+    x # 1
+))
+x # 2

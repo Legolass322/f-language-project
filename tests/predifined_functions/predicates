@@ -1,0 +1,9 @@
+# Types
+Any -> Boolean
+
+isint
+isreal
+isbool
+isnull
+isatom
+islist

@@ -1,0 +1,15 @@
+# Head
+
+(head LElement):
+    (head ()) # TBD
+    (head (1 {})) # 1
+
+# Tail
+
+(tail LElement):
+    (tail ()) # TBD
+    (head (1 tail{})) # tail{}
+
+# Cons
+
+(cons Element LElement) # (Element LElement{})

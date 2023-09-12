@@ -1,0 +1,11 @@
+# Break: Correct
+## termination value TBD: 0
+
+(break) # termination ^ with TBD
+
+(setq x 1)
+(while (isless x 3) (
+    (setq x (plus x 1))
+    (break)
+)) # -> (isless x 3)->true -> [x+1]->x -> break -> null
+x # 2

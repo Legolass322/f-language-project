@@ -1,0 +1,11 @@
+# Return: Correct
+## termination casting to integer TBD
+
+return 1 # termination with code 1
+
+((lambda () (
+    (some undefined staff)
+    (return 1)
+))) # -> (some undfined staff) evaluation -> 1
+
+return atom # termination with atom value (casting TBD)

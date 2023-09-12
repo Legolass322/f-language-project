@@ -1,0 +1,44 @@
+# Quote
+## also has a short form (quote (a)) <-> '(a)
+## context closure: TBD
+
+(quote 5)           # -> 5
+(quote 0.1)         # -> 0.1
+(quote true)        # -> true
+(quote false)       # -> false
+(quote null)        # -> null
+(quote quote)       # -> quote
+(quote atom)        # -> atom
+(quote (some list)) # -> (some list)
+
+'5                  # -> 5
+'0.1                # -> 0.1
+'true               # -> true
+'false              # -> false
+'null               # -> null
+'quote              # -> quote
+'atom               # -> atom
+'(some list)        # -> (some list)
+
+## context closure: TBD
+### Variant 1 (with closures)
+
+(setq x 1)
+x # -> 1
+((lambda ()
+    (
+        (setq x 2)
+        (return 'x)
+    )
+)) # -> ([2->x] (return 'x)) -> x (not evaluated) -> 2
+
+### Variant 2 (without closures)
+
+(setq x 1)
+x # -> 1
+((lambda ()
+    (
+        (setq x 2)
+        (return 'x)
+    )
+)) # -> ([2->x] (return 'x)) -> x (not evaluated) -> 1
