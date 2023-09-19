@@ -1,0 +1,37 @@
+; simple functional higher order functions
+; function creation (func, lambda) and its context resolving
+; arithmetic
+; loops
+
+(func reverse (list) (
+    (setq result ())
+    (setq iterated list)
+    (while (not (isempty iterated)) (
+        (setq result (cons (head iterated) result))
+        (setq iterated (tail iterated))
+    ))
+))
+
+(func map (f list) (
+    (setq reversedResult ())
+    (setq iterated list)
+    (while (not (isempty iterated)) (
+        (setq item (head iterated))
+        (setq reversedResult (cons (f item) reversedResult))
+        (setq iterated (tail iterated))
+    ))
+    (return (reverse reversedResult))
+))
+
+(func foldl (f init list) (
+    (setq value init)
+    (setq iterated list)
+    (while (not (isempty iterated)) (
+        (setq value (f value (head iterated)))
+        (setq iterated (tail iterated))
+    ))
+    (return value)
+))
+
+; Sum of squares from 1 to 10
+(foldl + 0 (map (lambda (base) (return (* base base))) (1 2 3 4 5 6 7 8 9 10)))
