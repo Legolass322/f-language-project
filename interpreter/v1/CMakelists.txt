@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.25)
+
+project("iv1")
+
+set(LEXER "src/lex.yy.c")
+set(PARSER "src/f.tab.c")
+
+add_library(parser STATIC ${PARSER})
+add_executable(lexer ${LEXER})
+
+target_link_libraries(lexer parser)
