@@ -84,7 +84,7 @@ literal:
   LITERAL {printf("LOG_PREFIX literal\n");}
 
 del:
-  delimiter_spaces_all
+  | delimiter_spaces_all del
 delimiter_spaces_all:
   | spaces | tabs | eols
 spaces:

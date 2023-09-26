@@ -1005,13 +1005,13 @@ YY_RULE_SETUP
 case 41:
 YY_RULE_SETUP
 #line 66 "f.l"
-{return SYM_TAB;}
+{printf("got tab\n"); return SYM_TAB;}
 	YY_BREAK
 case 42:
 /* rule 42 can match eol */
 YY_RULE_SETUP
 #line 67 "f.l"
-{return EOL;}
+{printf("got eol\n"); return EOL;}
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
