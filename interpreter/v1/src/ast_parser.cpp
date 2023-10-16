@@ -29,22 +29,29 @@ struct Token {
 class ASTNode {
 public:
   Token token;
-  vector<ASTNode> children;
+  vector<ASTNode *> children;
 
   ASTNode() {}
 
-  ASTNode(vector<ASTNode> children) { this->children = children; }
+  ASTNode(vector<ASTNode *> children) { this->children = children; }
 
   ASTNode(Token token) { this->token = token; }
 
-  ASTNode(Token token, vector<ASTNode> children) {
+  ASTNode(Token token, vector<ASTNode *> children) {
     this->token = token;
     this->children = children;
+  }
+
+  virtual ~ASTNode() {
+    for (auto i : this->children) {
+      delete i;
+    }
   }
 
   virtual void print(int depth = 0) {
     for (int i = 0; i < depth; i++)
       cout << "-";
+
     if (this->token.value != "")
       cout << this->token.value << endl;
     else
@@ -56,7 +63,7 @@ public:
       cout << " Children: " << endl;
 
       for (auto i : this->children) {
-        i.print(depth + 1);
+        i->print(depth + 1);
       }
     }
   }
@@ -65,27 +72,27 @@ public:
 class ListASTNode : public ASTNode {
 public:
   ListASTNode() {}
-  ListASTNode(vector<ASTNode> children) : ASTNode(children) {}
+  ListASTNode(vector<ASTNode *> children) : ASTNode(children) {}
 };
 
 class FuncDeclASTNode : public ASTNode {
 public:
-  ListASTNode params;
-  ListASTNode body;
+  ListASTNode *params;
+  ListASTNode *body;
   Token func_name;
-  FuncDeclASTNode(Token token, vector<ASTNode> children)
+  FuncDeclASTNode(Token token, vector<ASTNode *> children)
       : ASTNode(token, children) {
-    this->func_name = children[0].token;
-    this->params = static_cast<ListASTNode &>(children[1]);
-    this->body = static_cast<ListASTNode &>(children[2]);
+    this->func_name = children[0]->token;
+    this->params = static_cast<ListASTNode *>(children[1]);
+    this->body = static_cast<ListASTNode *>(children[2]);
   }
 };
 
 class FuncCallASTNode : public ASTNode {
 public:
-  vector<ASTNode> args;
+  vector<ASTNode *> args;
   Token func_name;
-  FuncCallASTNode(Token token, vector<ASTNode> children)
+  FuncCallASTNode(Token token, vector<ASTNode *> children)
       : ASTNode(token, children) {
     this->args = children;
   }
@@ -94,112 +101,111 @@ public:
 class SetqASTNode : public ASTNode {
 public:
   Token var_name;
-  ASTNode value;
-  SetqASTNode(Token token, vector<ASTNode> children)
+  ASTNode *value;
+  SetqASTNode(Token token, vector<ASTNode *> children)
       : ASTNode(token, children) {
-    this->var_name = children[0].token;
+    this->var_name = children[0]->token;
     this->value = children[1];
   }
 };
 
 class WhileASTNode : public ASTNode {
 public:
-  ASTNode condition;
-  ListASTNode body;
-  WhileASTNode(Token token, vector<ASTNode> children)
+  ASTNode *condition;
+  ListASTNode *body;
+  WhileASTNode(Token token, vector<ASTNode *> children)
       : ASTNode(token, children) {
     this->condition = children[0];
-    this->body = static_cast<ListASTNode &>(children[1]);
+    this->body = static_cast<ListASTNode *>(children[1]);
   }
 };
 
 class LambdaASTNode : public ASTNode {
 public:
-  ListASTNode params;
-  ListASTNode body;
-  LambdaASTNode(Token token, vector<ASTNode> children)
+  ListASTNode *params;
+  ListASTNode *body;
+  LambdaASTNode(Token token, vector<ASTNode *> children)
       : ASTNode(token, children) {
-    this->params = static_cast<ListASTNode &>(children[0]);
-    this->body = static_cast<ListASTNode &>(children[1]);
+    this->params = static_cast<ListASTNode *>(children[0]);
+    this->body = static_cast<ListASTNode *>(children[1]);
   }
 };
 // function declarations
-ASTNode parseASTNode(vector<any> ast);
-ListASTNode parseListASTNode(vector<any> ast);
-FuncDeclASTNode parseFuncDeclASTNode(vector<any> ast);
-SetqASTNode parseSetqASTNode(vector<any> ast);
-WhileASTNode parseWhileASTNode(vector<any> ast);
-LambdaASTNode parseLambdaASTNode(vector<any> ast);
+ASTNode *parseASTNode(vector<any> ast);
+ListASTNode *parseListASTNode(vector<any> ast);
+FuncDeclASTNode *parseFuncDeclASTNode(vector<any> ast);
+SetqASTNode *parseSetqASTNode(vector<any> ast);
+WhileASTNode *parseWhileASTNode(vector<any> ast);
+LambdaASTNode *parseLambdaASTNode(vector<any> ast);
 tuple<vector<any>, int> parseTokensToVector(vector<Token> tokens, int start);
-void printAST(ASTNode ast);
 
-ListASTNode parseListASTNode(vector<any> ast) {
-  vector<ASTNode> children;
+ListASTNode *parseListASTNode(vector<any> ast) {
+  vector<ASTNode *> children;
 
   for (auto i : ast) {
     if (i.type() == typeid(vector<any>)) {
       children.push_back(parseASTNode(any_cast<vector<any>>(i)));
     } else {
-      children.push_back(ASTNode(any_cast<Token>(i)));
+      children.push_back(new ASTNode(any_cast<Token>(i)));
     }
   }
 
-  return ListASTNode(children);
+  return new ListASTNode(children);
 }
 
-FuncDeclASTNode parseFuncDeclASTNode(vector<any> ast) {
+FuncDeclASTNode *parseFuncDeclASTNode(vector<any> ast) {
   Token token = any_cast<Token>(ast[0]);
-  vector<ASTNode> children;
+  vector<ASTNode *> children;
 
-  children.push_back(ASTNode(any_cast<Token>(ast[1])));
+  children.push_back(new ASTNode(any_cast<Token>(ast[1])));
   children.push_back(parseListASTNode(any_cast<vector<any>>(ast[2])));
   children.push_back(parseListASTNode(any_cast<vector<any>>(ast[3])));
 
-  return FuncDeclASTNode(token, children);
+  return new FuncDeclASTNode(token, children);
 }
 
-SetqASTNode parseSetqASTNode(vector<any> ast) {
+SetqASTNode *parseSetqASTNode(vector<any> ast) {
   Token token = any_cast<Token>(ast[0]);
-  vector<ASTNode> children;
+  vector<ASTNode *> children;
 
-  children.push_back(ASTNode(any_cast<Token>(ast[1])));
+  children.push_back(new ASTNode(any_cast<Token>(ast[1])));
 
   if (ast[2].type() == typeid(vector<any>)) {
     children.push_back(parseASTNode(any_cast<vector<any>>(ast[2])));
   } else {
-    children.push_back(ASTNode(any_cast<Token>(ast[2])));
+    children.push_back(new ASTNode(any_cast<Token>(ast[2])));
   }
 
-  return SetqASTNode(token, children);
+  return new SetqASTNode(token, children);
 }
 
-WhileASTNode parseWhileASTNode(vector<any> ast) {
+WhileASTNode *parseWhileASTNode(vector<any> ast) {
   Token token = any_cast<Token>(ast[0]);
-  vector<ASTNode> children;
+  vector<ASTNode *> children;
 
   children.push_back(parseASTNode(any_cast<vector<any>>(ast[1])));
   children.push_back(parseListASTNode(any_cast<vector<any>>(ast[2])));
 
-  return WhileASTNode(token, children);
+  return new WhileASTNode(token, children);
 }
 
-LambdaASTNode parseLambdaASTNode(vector<any> ast) {
+LambdaASTNode *parseLambdaASTNode(vector<any> ast) {
   Token token = any_cast<Token>(ast[0]);
-  vector<ASTNode> children;
+  vector<ASTNode *> children;
 
   children.push_back(parseListASTNode(any_cast<vector<any>>(ast[1])));
   children.push_back(parseListASTNode(any_cast<vector<any>>(ast[2])));
 
-  return LambdaASTNode(token, children);
+  return new LambdaASTNode(token, children);
 }
 
-ASTNode parseASTNode(vector<any> ast) {
+ASTNode *parseASTNode(vector<any> ast) {
 
   if (ast.size() == 0)
-    return ListASTNode();
+    return new ListASTNode();
 
   Token token = any_cast<Token>(ast[0]);
-  vector<ASTNode> children;
+  vector<ASTNode *> children;
 
   switch (token.type) {
   case SPECIAL_FORM:
@@ -216,22 +222,22 @@ ASTNode parseASTNode(vector<any> ast) {
         if (ast[i].type() == typeid(vector<any>)) {
           children.push_back(parseASTNode(any_cast<vector<any>>(ast[i])));
         } else {
-          children.push_back(ASTNode(any_cast<Token>(ast[i])));
+          children.push_back(new ASTNode(any_cast<Token>(ast[i])));
         }
       }
 
-      return ASTNode(token, children);
+      return new ASTNode(token, children);
     }
   case IDENTIFIER:
     for (int i = 1; i < ast.size(); i++) {
       if (ast[i].type() == typeid(vector<any>)) {
         children.push_back(parseASTNode(any_cast<vector<any>>(ast[i])));
       } else {
-        children.push_back(ASTNode(any_cast<Token>(ast[i])));
+        children.push_back(new ASTNode(any_cast<Token>(ast[i])));
       }
     }
 
-    return ASTNode(token, children);
+    return new ASTNode(token, children);
   case LITERAL:
     return parseListASTNode(ast);
   default:
@@ -302,10 +308,10 @@ int main() {
 
   auto [ast, st] = parseTokensToVector(tokens);
 
-  ASTNode root = parseASTNode(ast);
+  ASTNode *root = parseASTNode(ast);
 
   cout << "AST:" << endl;
-  root.print();
+  root->print();
 
   return 0;
 }
