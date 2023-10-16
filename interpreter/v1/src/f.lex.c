@@ -46,7 +46,6 @@ typedef int16_t flex_int16_t;
 typedef uint16_t flex_uint16_t;
 typedef int32_t flex_int32_t;
 typedef uint32_t flex_uint32_t;
-typedef uint64_t flex_uint64_t;
 #else
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
@@ -155,7 +154,7 @@ typedef struct yy_buffer_state *YY_BUFFER_STATE;
 typedef size_t yy_size_t;
 #endif
 
-extern yy_size_t yyleng;
+extern int yyleng;
 
 extern FILE *yyin, *yyout;
 
@@ -163,8 +162,27 @@ extern FILE *yyin, *yyout;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
     
-    #define YY_LESS_LINENO(n)
-    #define YY_LINENO_REWIND_TO(ptr)
+    /* Note: We specifically omit the test for yy_rule_can_match_eol because it requires
+     *       access to the local variable yy_act. Since yyless() is a macro, it would break
+     *       existing scanners that call yyless() from OUTSIDE yylex.
+     *       One obvious solution it to make yy_act a global. I tried that, and saw
+     *       a 5% performance hit in a non-yylineno scanner, because yy_act is
+     *       normally declared as a register variable-- so it is not worth it.
+     */
+    #define  YY_LESS_LINENO(n) \
+            do { \
+                int yyl;\
+                for ( yyl = n; yyl < yyleng; ++yyl )\
+                    if ( yytext[yyl] == '\n' )\
+                        --yylineno;\
+            }while(0)
+    #define YY_LINENO_REWIND_TO(dst) \
+            do {\
+                const char *p;\
+                for ( p = yy_cp-1; p >= (dst); --p)\
+                    if ( *p == '\n' )\
+                        --yylineno;\
+            }while(0)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -198,7 +216,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	yy_size_t yy_n_chars;
+	int yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -267,8 +285,8 @@ static YY_BUFFER_STATE * yy_buffer_stack = NULL; /**< Stack as an array. */
 
 /* yy_hold_char holds the character lost when yytext is formed. */
 static char yy_hold_char;
-static yy_size_t yy_n_chars;		/* number of characters read into yy_ch_buf */
-yy_size_t yyleng;
+static int yy_n_chars;		/* number of characters read into yy_ch_buf */
+int yyleng;
 
 /* Points to current character in buffer. */
 static char *yy_c_buf_p = NULL;
@@ -295,7 +313,7 @@ static void yy_init_buffer ( YY_BUFFER_STATE b, FILE *file  );
 
 YY_BUFFER_STATE yy_scan_buffer ( char *base, yy_size_t size  );
 YY_BUFFER_STATE yy_scan_string ( const char *yy_str  );
-YY_BUFFER_STATE yy_scan_bytes ( const char *bytes, yy_size_t len  );
+YY_BUFFER_STATE yy_scan_bytes ( const char *bytes, int len  );
 
 void *yyalloc ( yy_size_t  );
 void *yyrealloc ( void *, yy_size_t  );
@@ -348,7 +366,7 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
  */
 #define YY_DO_BEFORE_ACTION \
 	(yytext_ptr) = yy_bp; \
-	yyleng = (yy_size_t) (yy_cp - yy_bp); \
+	yyleng = (int) (yy_cp - yy_bp); \
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
@@ -516,6 +534,13 @@ static const flex_int16_t yy_chk[197] =
 
     } ;
 
+/* Table of booleans, true if rule could match eol. */
+static const flex_int32_t yy_rule_can_match_eol[45] =
+    {   0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 1, 0, 0,     };
+
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
 
@@ -535,9 +560,21 @@ char *yytext;
 #include <stdio.h>
 #include "f.tab.h"
 #define LEXER_LOG_PREFIX [Lexer]
+#define YY_USER_ACTION \
+    yylloc.first_line = yylloc.last_line; \
+    yylloc.first_column = yylloc.last_column; \
+    for(int i = 0; yytext[i] != '\0'; i++) { \
+        if(yytext[i] == '\n') { \
+            yylloc.last_line++; \
+            yylloc.last_column = 0; \
+        } \
+        else { \
+            yylloc.last_column++; \
+        } \
+    }
 int yyparse();
-#line 539 "<stdout>"
-#line 540 "<stdout>"
+#line 576 "<stdout>"
+#line 577 "<stdout>"
 
 #define INITIAL 0
 
@@ -576,7 +613,7 @@ FILE *yyget_out ( void );
 
 void yyset_out  ( FILE * _out_str  );
 
-			yy_size_t yyget_leng ( void );
+			int yyget_leng ( void );
 
 char *yyget_text ( void );
 
@@ -645,7 +682,7 @@ static int input ( void );
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
-		yy_size_t n; \
+		int n; \
 		for ( n = 0; n < max_size && \
 			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
@@ -754,10 +791,10 @@ YY_DECL
 		}
 
 	{
-#line 15 "f.l"
+#line 29 "f.l"
 
 
-#line 760 "<stdout>"
+#line 797 "<stdout>"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -803,6 +840,16 @@ yy_find_action:
 
 		YY_DO_BEFORE_ACTION;
 
+		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
+			{
+			int yyl;
+			for ( yyl = 0; yyl < yyleng; ++yyl )
+				if ( yytext[yyl] == '\n' )
+					
+    yylineno++;
+;
+			}
+
 do_action:	/* This label is used only to access EOF actions. */
 
 		switch ( yy_act )
@@ -816,214 +863,214 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 17 "f.l"
-{printf("%s sf\n", yytext); return SF_BREAK;}
+#line 31 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return SF_BREAK;}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 18 "f.l"
-{printf("%s sf\n", yytext); return SF_COND;}
+#line 32 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return SF_COND;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 19 "f.l"
-{printf("%s sf\n", yytext); return SF_FUNC;}
+#line 33 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return SF_FUNC;}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 20 "f.l"
-{printf("%s sf\n", yytext); return SF_LAMBDA;}
+#line 34 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return SF_LAMBDA;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 21 "f.l"
-{printf("%s sf\n", yytext); return SF_PROG;}
+#line 35 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return SF_PROG;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 22 "f.l"
-{printf("%s sf\n", yytext); return SF_QOUTE;}
+#line 36 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return SF_QOUTE;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 23 "f.l"
-{printf("%s sf\n", yytext); return SF_RETURN;}
+#line 37 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return SF_RETURN;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 24 "f.l"
-{printf("%s sf\n", yytext); return SF_SETQ;}
+#line 38 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return SF_SETQ;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 25 "f.l"
-{printf("%s sf\n", yytext); return SF_WHILE;}
+#line 39 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return SF_WHILE;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 27 "f.l"
-{printf("%s sf\n", yytext); return PF_PLUS;}
+#line 41 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_PLUS;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 28 "f.l"
-{printf("%s sf\n", yytext); return PF_TIMES;}
+#line 42 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_TIMES;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 29 "f.l"
-{printf("%s sf\n", yytext); return PF_DIVIDE;}
+#line 43 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_DIVIDE;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 30 "f.l"
-{printf("%s sf\n", yytext); return PF_MINUS;}
+#line 44 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_MINUS;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 32 "f.l"
-{printf("%s sf\n", yytext); return PF_HEAD;}
+#line 46 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_HEAD;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 33 "f.l"
-{printf("%s sf\n", yytext); return PF_TAIL;}
+#line 47 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_TAIL;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 34 "f.l"
-{printf("%s sf\n", yytext); return PF_CONS;}
+#line 48 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_CONS;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 36 "f.l"
-{printf("%s sf\n", yytext); return PF_EQUAL;}
+#line 50 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_EQUAL;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 37 "f.l"
-{printf("%s sf\n", yytext); return PF_NONEQUAL;}
+#line 51 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_NONEQUAL;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 38 "f.l"
-{printf("%s sf\n", yytext); return PF_LESS;}
+#line 52 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_LESS;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 39 "f.l"
-{printf("%s sf\n", yytext); return PF_LESSEQ;}
+#line 53 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_LESSEQ;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 40 "f.l"
-{printf("%s sf\n", yytext); return PF_GREATER;}
+#line 54 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_GREATER;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 41 "f.l"
-{printf("%s sf\n", yytext); return PF_GREATEREQ;}
+#line 55 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_GREATEREQ;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 43 "f.l"
-{printf("%s sf\n", yytext); return PF_ISINT;}
+#line 57 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_ISINT;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 44 "f.l"
-{printf("%s sf\n", yytext); return PF_ISREAL;}
+#line 58 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_ISREAL;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 45 "f.l"
-{printf("%s sf\n", yytext); return PF_ISBOOL;}
+#line 59 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_ISBOOL;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 46 "f.l"
-{printf("%s sf\n", yytext); return PF_ISNULL;}
+#line 60 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_ISNULL;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 47 "f.l"
-{printf("%s sf\n", yytext); return PF_ISATOM;}
+#line 61 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_ISATOM;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 48 "f.l"
-{printf("%s sf\n", yytext); return PF_ISLIST;}
+#line 62 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_ISLIST;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 50 "f.l"
-{printf("%s sf\n", yytext); return PF_AND;}
+#line 64 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_AND;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 51 "f.l"
-{printf("%s sf\n", yytext); return PF_OR;}
+#line 65 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_OR;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 52 "f.l"
-{printf("%s sf\n", yytext); return PF_XOR;}
+#line 66 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_XOR;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 53 "f.l"
-{printf("%s sf\n", yytext); return PF_NOT;}
+#line 67 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_NOT;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 55 "f.l"
-{printf("%s sf\n", yytext); return PF_EVAL;}
+#line 69 "f.l"
+{printf("%s %d:%d sf\n", yytext, yylloc.first_line, yylloc.first_column); return PF_EVAL;}
 	YY_BREAK
 case 34:
-#line 58 "f.l"
+#line 72 "f.l"
 case 35:
-#line 59 "f.l"
+#line 73 "f.l"
 case 36:
-#line 60 "f.l"
+#line 74 "f.l"
 case 37:
-#line 61 "f.l"
+#line 75 "f.l"
 case 38:
 YY_RULE_SETUP
-#line 61 "f.l"
-{printf("%s literal\n", yytext); return LITERAL;}
+#line 75 "f.l"
+{printf("%s %d:%d literal\n", yytext, yylloc.first_line, yylloc.first_column); return LITERAL;}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 63 "f.l"
-{printf("%s identifier\n", yytext); return IDENTIFIER;}
+#line 77 "f.l"
+{printf("%s %d:%d identifier\n", yytext, yylloc.first_line, yylloc.first_column); return IDENTIFIER;}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 65 "f.l"
+#line 79 "f.l"
 {return SYM_SPACE;}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 66 "f.l"
+#line 80 "f.l"
 {return SYM_TAB;}
 	YY_BREAK
 case 42:
 /* rule 42 can match eol */
 YY_RULE_SETUP
-#line 67 "f.l"
+#line 81 "f.l"
 {return EOL;}
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 68 "f.l"
-{printf("%s got\n", yytext); return yytext[0];}
+#line 82 "f.l"
+{printf("%s %d:%d got\n", yytext, yylloc.first_line, yylloc.first_column); return yytext[0];}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 69 "f.l"
+#line 83 "f.l"
 ECHO;
 	YY_BREAK
-#line 1026 "<stdout>"
+#line 1073 "<stdout>"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1210,7 +1257,7 @@ static int yy_get_next_buffer (void)
 
 	else
 		{
-			yy_size_t num_to_read =
+			int num_to_read =
 			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
 		while ( num_to_read <= 0 )
@@ -1224,7 +1271,7 @@ static int yy_get_next_buffer (void)
 
 			if ( b->yy_is_our_buffer )
 				{
-				yy_size_t new_size = b->yy_buf_size * 2;
+				int new_size = b->yy_buf_size * 2;
 
 				if ( new_size <= 0 )
 					b->yy_buf_size += b->yy_buf_size / 8;
@@ -1282,7 +1329,7 @@ static int yy_get_next_buffer (void)
 
 	if (((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
 		/* Extend the array by 50%, plus the number we really need. */
-		yy_size_t new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
+		int new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
 		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) yyrealloc(
 			(void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf, (yy_size_t) new_size  );
 		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
@@ -1371,7 +1418,7 @@ static int yy_get_next_buffer (void)
 	if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
 		{ /* need to shift things up to make room */
 		/* +2 for EOB chars. */
-		yy_size_t number_to_move = (yy_n_chars) + 2;
+		int number_to_move = (yy_n_chars) + 2;
 		char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
 					YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
 		char *source =
@@ -1390,6 +1437,10 @@ static int yy_get_next_buffer (void)
 		}
 
 	*--yy_cp = (char) c;
+
+    if ( c == '\n' ){
+        --yylineno;
+    }
 
 	(yytext_ptr) = yy_bp;
 	(yy_hold_char) = *yy_cp;
@@ -1422,7 +1473,7 @@ static int yy_get_next_buffer (void)
 
 		else
 			{ /* need more input */
-			yy_size_t offset = (yy_c_buf_p) - (yytext_ptr);
+			int offset = (int) ((yy_c_buf_p) - (yytext_ptr));
 			++(yy_c_buf_p);
 
 			switch ( yy_get_next_buffer(  ) )
@@ -1467,6 +1518,11 @@ static int yy_get_next_buffer (void)
 	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
 	*(yy_c_buf_p) = '\0';	/* preserve yytext */
 	(yy_hold_char) = *++(yy_c_buf_p);
+
+	if ( c == '\n' )
+		
+    yylineno++;
+;
 
 	return c;
 }
@@ -1791,12 +1847,12 @@ YY_BUFFER_STATE yy_scan_string (const char * yystr )
  * 
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE yy_scan_bytes  (const char * yybytes, yy_size_t  _yybytes_len )
+YY_BUFFER_STATE yy_scan_bytes  (const char * yybytes, int  _yybytes_len )
 {
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	yy_size_t i;
+	int i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = (yy_size_t) (_yybytes_len + 2);
@@ -1838,7 +1894,7 @@ static void yynoreturn yy_fatal_error (const char* msg )
 	do \
 		{ \
 		/* Undo effects of setting up yytext. */ \
-        yy_size_t yyless_macro_arg = (n); \
+        int yyless_macro_arg = (n); \
         YY_LESS_LINENO(yyless_macro_arg);\
 		yytext[yyleng] = (yy_hold_char); \
 		(yy_c_buf_p) = yytext + yyless_macro_arg; \
@@ -1878,7 +1934,7 @@ FILE *yyget_out  (void)
 /** Get the length of the current token.
  * 
  */
-yy_size_t yyget_leng  (void)
+int yyget_leng  (void)
 {
         return yyleng;
 }
@@ -1934,6 +1990,9 @@ static int yy_init_globals (void)
      * This function is called from yylex_destroy(), so don't allocate here.
      */
 
+    /* We do not touch yylineno unless the option is enabled. */
+    yylineno =  1;
+    
     (yy_buffer_stack) = NULL;
     (yy_buffer_stack_top) = 0;
     (yy_buffer_stack_max) = 0;
@@ -2028,7 +2087,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 69 "f.l"
+#line 83 "f.l"
 
 
 int yywrap() {

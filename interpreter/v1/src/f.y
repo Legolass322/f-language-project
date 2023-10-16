@@ -8,6 +8,8 @@ int yyerror(const char * s) {
 }
 %}
 
+%locations
+
 %token SF_BREAK SF_COND SF_FUNC SF_LAMBDA SF_PROG SF_QOUTE SF_RETURN SF_SETQ SF_WHILE
 %token PF_PLUS PF_TIMES PF_DIVIDE PF_MINUS
 %token PF_HEAD PF_TAIL PF_CONS
@@ -30,7 +32,7 @@ elements:
 
 element:
   atom | list | literal 
-  {printf("LOG_PREFIX element\n");}
+  {printf("LOG_PREFIX element\n"); }
 
 list: 
   '(' del SF_QOUTE del element del ')' |
@@ -84,7 +86,7 @@ literal:
   LITERAL {printf("LOG_PREFIX literal\n");}
 
 del:
-  delimiter_spaces_all
+  | delimiter_spaces_all del
 delimiter_spaces_all:
   | spaces | tabs | eols
 spaces:
