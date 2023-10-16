@@ -1,0 +1,8 @@
+(func reverse (list) (
+    (setq result ())
+    (setq iterated list)
+    (while (not (isempty iterated)) (
+        (setq result (cons (head iterated) result))
+        (setq iterated (tail iterated))
+    ))
+))
