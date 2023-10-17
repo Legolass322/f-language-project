@@ -35,6 +35,8 @@ public:
   Token func_name;
 
   FuncDeclASTNode(Token token, vector<ASTNode *> children);
+
+  void print(int depth = 0) override;
 };
 
 // FuncCallASTNode class declarations

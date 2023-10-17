@@ -54,6 +54,26 @@ FuncDeclASTNode::FuncDeclASTNode(Token token, vector<ASTNode *> children)
   this->body = (ListASTNode *)children[2];
 }
 
+void FuncDeclASTNode::print(int depth) {
+  for (int i = 0; i < depth; i++)
+    cout << "-";
+
+  if (this->token.value != "")
+    cout << this->token.value << "(" << this->func_name.value << ")" << endl;
+  else
+    cout << "List" << endl;
+
+  if (children.size() > 0) {
+    for (int i = 0; i < depth; i++)
+      cout << "-";
+    cout << " Children: " << endl;
+
+    for (auto i : this->children) {
+      i->print(depth + 1);
+    }
+  }
+}
+
 // FuncCallASTNode class definitions
 FuncCallASTNode::FuncCallASTNode(Token token, vector<ASTNode *> children)
     : ASTNode(token, children) {
