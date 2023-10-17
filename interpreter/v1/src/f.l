@@ -79,7 +79,7 @@ null |
 [ ] {return SYM_SPACE;}
 [\t] {return SYM_TAB;}
 [\n] {return EOL;}
-. {printf("%s %d:%d got\n", yytext, yylloc.first_line, yylloc.first_column); return yytext[0];}
+. {printf("%s %d:%d del\n", yytext, yylloc.first_line, yylloc.first_column); return yytext[0];}
 %%
 
 int yywrap() {

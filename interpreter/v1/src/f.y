@@ -74,6 +74,8 @@ list:
   '(' del PF_XOR del element del element del ')' |
   '(' del PF_NOT del element del ')' |
 
+  '(' del IDENTIFIER del elements del ')' |
+
   '(' del PF_EVAL del element del ')' |
 
   '(' del elements del ')'

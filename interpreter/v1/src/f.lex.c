@@ -1063,7 +1063,7 @@ YY_RULE_SETUP
 case 43:
 YY_RULE_SETUP
 #line 82 "f.l"
-{printf("%s %d:%d got\n", yytext, yylloc.first_line, yylloc.first_column); return yytext[0];}
+{printf("%s %d:%d del\n", yytext, yylloc.first_line, yylloc.first_column); return yytext[0];}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
