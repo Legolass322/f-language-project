@@ -1,3 +1,9 @@
+(func binaryToDecimal (binary) (
+	(return (foldl (lambda (value item) (
+		(return (plus (times 2 value) item))
+	)) 0 binary))
+))
+
 (func reverse (list) (
     (setq result ())
     (setq iterated list)
@@ -6,3 +12,5 @@
         (setq iterated (tail iterated))
     ))
 ))
+
+(binaryToDecimal (reverse (1 0 1 0 1 0 1 0)))
