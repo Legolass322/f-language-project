@@ -4,13 +4,13 @@
 	)) 0 binary))
 ))
 
-(func reverse (list) (
+(func reverse (lst) (
     (setq result ())
-    (setq iterated list)
+    (setq iterated lst)
     (while (not (isempty iterated)) (
         (setq result (cons (head iterated) result))
         (setq iterated (tail iterated))
     ))
 ))
 
-(binaryToDecimal (reverse (1 0 1 0 1 0 1 0)))
+(binaryToDecimal (reverse (quote 1 0 1 0 1 0 1 0)))

@@ -35,7 +35,7 @@ element:
   {printf("LOG_PREFIX element\n"); }
 
 list: 
-  '(' del SF_QOUTE del element del ')' |
+  '(' del SF_QOUTE del elements del ')' |
   '(' del SF_SETQ del atom del element del ')' |
   '(' del SF_FUNC del atom del list del element del ')' |
   '(' del SF_LAMBDA del list del element del ')' |
