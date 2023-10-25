@@ -1,3 +1,7 @@
 test.txt
 ast_parser
-
+cpp_lexer
+parser.tab.cc
+parser.tab.hh
+test.flang
+location.hh
