@@ -11,7 +11,9 @@
   #include <string>
   #include <iostream>
   #include <memory>
+  #include <graphviz/gvc.h>
   #include "ast.h"
+  #define NO_LAYOUT_OR_RENDERING
   class Driver;
 
 }
@@ -66,6 +68,8 @@
 %type <std::shared_ptr<flang::FuncCallNode>> head_def
 %type <std::shared_ptr<flang::FuncCallNode>> tail_def
 %type <std::shared_ptr<flang::FuncCallNode>> cons_def
+%type <std::shared_ptr<flang::FuncCallNode>> not_def
+%type <std::shared_ptr<flang::FuncCallNode>> func_call
 
 %type <std::shared_ptr<flang::ASTNode>> program
 %type <std::shared_ptr<flang::ASTNode>> element
@@ -83,8 +87,35 @@ program:
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, "program");
       $$ = std::make_shared<flang::ASTNode>(flang::ASTNodeType::PROGRAM, t, $1);
-      $$->print();
+
+    #ifdef NO_LAYOUT_OR_RENDERING
+
+      GVC_t *gvc = gvContext();
+
+    #endif
+
+      std::shared_ptr<Agraph_t> ast = std::shared_ptr<Agraph_t>(agopen((char*)"ast", Agdirected, NULL));
+
+      $$->print(ast);
       
+    #ifdef NO_LAYOUT_OR_RENDERING
+
+      FILE *astdot = fopen((char*)"ast.dot", (char*)"w");
+      agwrite(ast.get(), astdot);
+
+    #else
+
+      gvLayout(gvc, ast.get(), (char*)"dot");
+      gvRender(gvc, ast.get(), (char*)"png", fopen((char*)"ast.png", (char*)"w"));
+      gvFreeLayout(gvc, ast.get());
+
+    #endif
+
+      agclose(ast.get());
+      fclose(astdot);
+      gvFreeContext(gvc);
+
+      system("dot -Tsvg ast.dot > ast.svg");
     }
 
 elements:
@@ -178,7 +209,7 @@ break_def:
     }
 
 while_def:
-    "(" del SF_WHILE d list d list del ")"
+    "(" del SF_WHILE d element d list del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -283,6 +314,25 @@ setq_def:
       $$ = std::make_shared<flang::SetqNode>(t, children);
     }
 
+not_def:
+    "(" del PF_NOT d element del ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, "not");
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $5
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+func_call:
+    "(" del atom d elements del ")"
+    {
+      std::shared_ptr<flang::Token> t = $3; 
+      std::vector<std::shared_ptr<flang::ASTNode>> children = $5;
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
 
 list:
   "(" del elements del ")" { $$ = std::make_shared<flang::ListNode>($3); }
@@ -302,6 +352,8 @@ stmt:
   | tail_def {$$ = $1;}
   | cons_def {$$ = $1;}
   | setq_def {$$ = $1;}
+  | not_def {$$ = $1;}
+  | func_call {$$ = $1;}
   ;
 
 

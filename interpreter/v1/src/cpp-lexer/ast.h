@@ -1,6 +1,7 @@
 #ifndef AST_H
 #define AST_H
 
+#include <graphviz/gvc.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -49,6 +50,7 @@ enum ASTNodeType {
 
 class ASTNode {
 public:
+  shared_ptr<Agnode_t> graph_node;
   shared_ptr<Token> head;
   vector<shared_ptr<ASTNode>> children;
   ASTNodeType node_type;
@@ -61,7 +63,7 @@ public:
           vector<shared_ptr<ASTNode>> const &children);
 
   virtual ~ASTNode();
-  virtual void print();
+  virtual void print(shared_ptr<Agraph_t> const &graph);
 };
 
 class FuncDefNode : public ASTNode {
@@ -75,20 +77,20 @@ public:
   FuncDefNode(shared_ptr<Token> const &head,
               vector<shared_ptr<ASTNode>> const &children);
 
-  void print() override;
+  void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
 class FuncCallNode : public ASTNode {
 public:
   shared_ptr<Token> name;
-  shared_ptr<ASTNode> args;
+  vector<shared_ptr<ASTNode>> args;
 
   FuncCallNode();
 
   FuncCallNode(shared_ptr<Token> const &head,
                vector<shared_ptr<ASTNode>> const &children);
 
-  void print() override;
+  void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
 class LambdaNode : public ASTNode {
@@ -101,7 +103,7 @@ public:
   LambdaNode(shared_ptr<Token> const &head,
              vector<shared_ptr<ASTNode>> const &children);
 
-  void print() override;
+  void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
 class ListNode : public ASTNode {
@@ -109,7 +111,7 @@ public:
   ListNode();
   ListNode(vector<shared_ptr<ASTNode>> const &children);
 
-  void print() override;
+  void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
 class ReturnNode : public ASTNode {
@@ -120,7 +122,7 @@ public:
   ReturnNode(shared_ptr<Token> const &head,
              vector<shared_ptr<ASTNode>> const &children);
 
-  void print() override;
+  void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
 class CondNode : public ASTNode {
@@ -129,7 +131,7 @@ public:
   CondNode(shared_ptr<Token> const &head,
            vector<shared_ptr<ASTNode>> const &children);
 
-  void print() override;
+  void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
 class WhileNode : public ASTNode {
@@ -141,7 +143,7 @@ public:
   WhileNode(shared_ptr<Token> const &head,
             vector<shared_ptr<ASTNode>> const &children);
 
-  void print() override;
+  void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
 class ProgNode : public ASTNode {
@@ -150,7 +152,7 @@ public:
   ProgNode(shared_ptr<Token> const &head,
            vector<shared_ptr<ASTNode>> const &children);
 
-  void print() override;
+  void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
 class SetqNode : public ASTNode {
@@ -162,7 +164,7 @@ public:
   SetqNode(shared_ptr<Token> const &head,
            vector<shared_ptr<ASTNode>> const &children);
 
-  void print() override;
+  void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
 } // namespace flang
