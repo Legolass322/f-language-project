@@ -233,10 +233,36 @@ CondNode::CondNode() {}
 
 CondNode::CondNode(shared_ptr<Token> const &head,
                    vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(COND, head, children) {}
+    : ASTNode(COND, head, children) {
+  this->cond = children[0];
+  this->body_true = children[1];
+
+  if (children.size() == 3) {
+    this->body_false = children[2];
+  }
+}
 
 void CondNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "CondNode" << endl;
+  this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
+  string label = "CondNode\n";
+  agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
+
+  cond->print(graph);
+  body_true->print(graph);
+
+  Agedge_t *c =
+      agedge(graph.get(), graph_node.get(), cond->graph_node.get(), NULL, TRUE);
+  agsafeset(c, (char *)"label", "cond", (char *)"");
+  Agedge_t *t = agedge(graph.get(), graph_node.get(),
+                       body_true->graph_node.get(), NULL, TRUE);
+  agsafeset(t, (char *)"label", "body_true", (char *)"");
+
+  if (body_false != nullptr) {
+    body_false->print(graph);
+    Agedge_t *f = agedge(graph.get(), graph_node.get(),
+                         body_false->graph_node.get(), NULL, TRUE);
+    agsafeset(f, (char *)"label", "body_false", (char *)"");
+  }
 }
 
 WhileNode::WhileNode() {}
@@ -271,8 +297,14 @@ ProgNode::ProgNode(shared_ptr<Token> const &head,
     : ASTNode(PROG, head, children) {}
 
 void ProgNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "ProgNode" << endl;
-  // TODO: print
+  this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
+  string label = "ProgNode\n";
+  agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
+
+  for (auto child : children) {
+    child->print(graph);
+    agedge(graph.get(), graph_node.get(), child->graph_node.get(), NULL, TRUE);
+  }
 }
 
 SetqNode::SetqNode() {}

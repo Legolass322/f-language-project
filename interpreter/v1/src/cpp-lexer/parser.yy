@@ -31,7 +31,6 @@
 
 }
 
-
 %define api.token.prefix {TOK_}
 %token <std::string> SF_BREAK SF_COND SF_FUNC SF_LAMBDA SF_PROG SF_QUOTE SF_RETURN SF_SETQ SF_WHILE
 %token <std::string> PF_PLUS PF_TIMES PF_DIVIDE PF_MINUS
@@ -49,6 +48,9 @@
 %token <std::string> SYM_LPAREN "(" 
 %token <std::string> SYM_RPAREN ")" 
 
+%left SYM_LPAREN SYM_RPAREN
+%left PF_PLUS PF_TIMES PF_DIVIDE PF_MINUS
+%left SYM_SPACE SYM_TAB EOL
 
 %type <std::string> del
 %type <std::string> d
@@ -60,6 +62,8 @@
 %type <std::shared_ptr<flang::ASTNode>> break_def
 %type <std::shared_ptr<flang::WhileNode>> while_def
 %type <std::shared_ptr<flang::SetqNode>> setq_def
+%type <std::shared_ptr<flang::ProgNode>> prog_def
+%type <std::shared_ptr<flang::CondNode>> cond_def
 
 %type <std::shared_ptr<flang::FuncCallNode>> plus_def
 %type <std::shared_ptr<flang::FuncCallNode>> times_def
@@ -111,7 +115,6 @@ program:
 
     #endif
 
-      agclose(ast.get());
       fclose(astdot);
       gvFreeContext(gvc);
 
@@ -146,21 +149,8 @@ element:
     | stmt { $$ = $1;}
     | list { $$ = $1;}
 
-pf_func:
-    element 
-  | PF_PLUS | PF_TIMES | PF_DIVIDE | PF_MINUS
-  | PF_HEAD | PF_TAIL | PF_CONS
-  | PF_EQUAL | PF_NONEQUAL | PF_LESS | PF_LESSEQ | PF_GREATER | PF_GREATEREQ
-  | PF_ISINT | PF_ISREAL | PF_ISBOOL | PF_ISNULL | PF_ISATOM | PF_ISLIST
-  | PF_AND | PF_OR | PF_XOR | PF_NOT
-  | PF_EVAL
-  ;
-
-pf_funcs:
-  | pf_func del pf_funcs
-
 func_def:
-    "(" del SF_FUNC d element d list d list del ")"
+    "(" del SF_FUNC de element de list de stmt del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -173,7 +163,7 @@ func_def:
     }
 
 lambda_def:
-    "(" del SF_LAMBDA d list d list del ")"
+    "(" del SF_LAMBDA de list de stmt del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -185,13 +175,13 @@ lambda_def:
     }
 
 quote_def:
-    "(" del SF_QUOTE d elements del ")"
+    "(" del SF_QUOTE de elements del ")"
     {
       $$ = std::make_shared<flang::ListNode>($5); 
     }
 
 return_def:
-    "(" del SF_RETURN d element del ")"
+    "(" del SF_RETURN de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -209,7 +199,7 @@ break_def:
     }
 
 while_def:
-    "(" del SF_WHILE d element d list del ")"
+    "(" del SF_WHILE de element de list del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -221,7 +211,7 @@ while_def:
     }
 
 plus_def:
-    "(" del PF_PLUS d element d element del ")"
+    "(" del PF_PLUS de element de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -233,7 +223,7 @@ plus_def:
     }
 
 times_def:
-    "(" del PF_TIMES d element d element del ")"
+    "(" del PF_TIMES de element de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -245,7 +235,7 @@ times_def:
     }
 
 divide_def:
-    "(" del PF_DIVIDE d element d element del ")"
+    "(" del PF_DIVIDE de element de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -257,7 +247,7 @@ divide_def:
     }
 
 minus_def:
-    "(" del PF_MINUS d element d element del ")"
+    "(" del PF_MINUS de element de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -269,7 +259,7 @@ minus_def:
     }
 
 head_def:
-    "(" del PF_HEAD d element del ")"
+    "(" del PF_HEAD de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -280,7 +270,7 @@ head_def:
     }
 
 tail_def:
-    "(" del PF_TAIL d element del ")"
+    "(" del PF_TAIL de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -291,7 +281,7 @@ tail_def:
     }
 
 cons_def:
-    "(" del PF_CONS d element d element del ")"
+    "(" del PF_CONS de element de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -303,11 +293,11 @@ cons_def:
     }
 
 setq_def:
-    "(" del SF_SETQ d element d element del ")"
+    "(" del SF_SETQ de atom de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $3);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
+        std::make_shared<flang::ASTNode>(flang::ASTNodeType::LEAF, $5),
         $7
       };
 
@@ -315,7 +305,7 @@ setq_def:
     }
 
 not_def:
-    "(" del PF_NOT d element del ")"
+    "(" del PF_NOT de element del ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, "not");
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
@@ -326,7 +316,7 @@ not_def:
     }
 
 func_call:
-    "(" del atom d elements del ")"
+    "(" del atom de elements del ")"
     {
       std::shared_ptr<flang::Token> t = $3; 
       std::vector<std::shared_ptr<flang::ASTNode>> children = $5;
@@ -334,11 +324,43 @@ func_call:
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
+prog_def:
+    "(" del SF_PROG de elements del ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      $$ = std::make_shared<flang::ProgNode>(t, $5);
+    }
+
+cond_def:
+    "(" del SF_COND de element de element del ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $5,
+        $7
+      };
+
+      $$ = std::make_shared<flang::CondNode>(t, children);
+    }
+    | "(" del SF_COND de element de element de element del ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $5,
+        $7,
+        $9
+      };
+
+      $$ = std::make_shared<flang::CondNode>(t, children);
+    } 
+
 list:
   "(" del elements del ")" { $$ = std::make_shared<flang::ListNode>($3); }
 
 stmt:
-  | func_def {$$ = $1;}
+  func_def {$$ = $1;}
   | lambda_def {$$ = $1;}
   | quote_def {$$ = $1;}
   | return_def {$$ = $1;}
@@ -354,14 +376,38 @@ stmt:
   | setq_def {$$ = $1;}
   | not_def {$$ = $1;}
   | func_call {$$ = $1;}
+  | prog_def {$$ = $1;}
+  | cond_def {$$ = $1;}
   ;
 
 
 atom:
-  IDENTIFIER
-  {
-    $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1);
-  }
+  IDENTIFIER { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_PLUS  { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_TIMES { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_DIVIDE { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_MINUS { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_HEAD { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_TAIL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_CONS { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_EQUAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_NONEQUAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_LESS { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_LESSEQ { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_GREATER { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_GREATEREQ { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_ISINT { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_ISREAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_ISBOOL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_ISNULL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_ISATOM { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_ISLIST { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_AND { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_OR { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_XOR { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_NOT { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  | PF_EVAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  ;
 
 literal:
   INT { $$ = std::make_shared<flang::Token>(flang::TokenType::INT, $1); }
@@ -370,10 +416,18 @@ literal:
   | FALSE { $$ = std::make_shared<flang::Token>(flang::TokenType::BOOL, $1); }
   | NULL { $$ = std::make_shared<flang::Token>(flang::TokenType::NUL, $1); }
 
+// 0 or more delimiters
 del:
   { $$ = "";}
   | d del
 
+// 1 or more delimiters
+de:
+  d
+  | d de
+
+
+// delimiter
 d:
   SYM_SPACE | SYM_TAB | EOL
 

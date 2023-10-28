@@ -127,6 +127,10 @@ public:
 
 class CondNode : public ASTNode {
 public:
+  shared_ptr<ASTNode> cond;
+  shared_ptr<ASTNode> body_true;
+  shared_ptr<ASTNode> body_false;
+
   CondNode();
   CondNode(shared_ptr<Token> const &head,
            vector<shared_ptr<ASTNode>> const &children);
