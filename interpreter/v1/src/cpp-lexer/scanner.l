@@ -77,9 +77,9 @@ null {return yy::parser::make_NULL(yytext, loc);}
 
 [a-zA-Z][a-zA-Z0-9]* {return yy::parser::make_IDENTIFIER(yytext, loc);}
 
-[ ] {loc.step(); return yy::parser::make_SYM_SPACE(yytext, loc);}
-[\t] {loc.step(); return yy::parser::make_SYM_TAB(yytext, loc);}
-[\n] {loc.lines(yyleng); loc.step(); return yy::parser::make_EOL(yytext, loc);}
+[ ] {loc.step();}
+[\t] {loc.step();}
+[\n] {loc.lines(yyleng); loc.step(); }
 
 [\(] {return yy::parser::make_SYM_LPAREN(yytext, loc);}
 [\)] {return yy::parser::make_SYM_RPAREN(yytext, loc);}

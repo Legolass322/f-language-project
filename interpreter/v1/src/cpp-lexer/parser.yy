@@ -44,16 +44,11 @@
 %token <std::string> REAL
 %token <std::string> TRUE FALSE
 %token <std::string> NULL
-%token <std::string> SYM_SPACE SYM_TAB EOL 
 %token <std::string> SYM_LPAREN "(" 
 %token <std::string> SYM_RPAREN ")" 
 
 %left SYM_LPAREN SYM_RPAREN
 %left PF_PLUS PF_TIMES PF_DIVIDE PF_MINUS
-%left SYM_SPACE SYM_TAB EOL
-
-%type <std::string> del
-%type <std::string> d
 
 %type <std::shared_ptr<flang::FuncDefNode>> func_def
 %type <std::shared_ptr<flang::LambdaNode>> lambda_def
@@ -123,13 +118,13 @@ program:
 
 elements:
   { $$ = std::vector<std::shared_ptr<flang::ASTNode>>();}
-  | element del elements
+  | element elements
   {
     std::vector<std::shared_ptr<flang::ASTNode>> v;
 
     v.push_back($1);
 
-    for (auto& e : $3) {
+    for (auto& e : $2) {
       v.push_back(e);
     }
 
@@ -147,217 +142,219 @@ element:
         $$ = std::make_shared<flang::ASTNode>(flang::ASTNodeType::LEAF, $1);
       }
     | stmt { $$ = $1;}
-    | list { $$ = $1;}
+    | "(" ")" { $$ = std::make_shared<flang::ListNode>();}
 
 func_def:
-    "(" del SF_FUNC de element de list de stmt del ")"
+    "(" SF_FUNC IDENTIFIER list stmt ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> id = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $3);
       vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7,
-        $9
+        std::make_shared<flang::ASTNode>(flang::ASTNodeType::LEAF, id),
+        $4,
+        $5
       };
 
       $$ = std::make_shared<flang::FuncDefNode>(t, children);
     }
 
 lambda_def:
-    "(" del SF_LAMBDA de list de stmt del ")"
+    "(" SF_LAMBDA list stmt ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7
+        $3,
+        $4
       };
 
       $$ = std::make_shared<flang::LambdaNode>(t, children);
     }
 
 quote_def:
-    "(" del SF_QUOTE de elements del ")"
+    "(" SF_QUOTE elements ")"
     {
-      $$ = std::make_shared<flang::ListNode>($5); 
+      $$ = std::make_shared<flang::ListNode>($3); 
     }
 
 return_def:
-    "(" del SF_RETURN de element del ")"
+    "(" SF_RETURN element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5
+        $3
       };
 
       $$ = std::make_shared<flang::ReturnNode>(t, children);
     }
 
 break_def:
-    "(" del SF_BREAK del ")"
+    "(" SF_BREAK ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       $$ = std::make_shared<flang::ASTNode>(flang::ASTNodeType::BREAK, t);
     }
 
 while_def:
-    "(" del SF_WHILE de element de list del ")"
+    "(" SF_WHILE element list ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7
+        $3,
+        $4
       };
 
       $$ = std::make_shared<flang::WhileNode>(t, children);
     }
 
 plus_def:
-    "(" del PF_PLUS de element de element del ")"
+    "(" PF_PLUS element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7
+        $3,
+        $4
       };
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
 times_def:
-    "(" del PF_TIMES de element de element del ")"
+    "(" PF_TIMES element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7
+        $3,
+        $4
       };
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
 divide_def:
-    "(" del PF_DIVIDE de element de element del ")"
+    "(" PF_DIVIDE element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7
+        $3,
+        $4
       };
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
 minus_def:
-    "(" del PF_MINUS de element de element del ")"
+    "(" PF_MINUS element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7
+        $3,
+        $4
       };
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
 head_def:
-    "(" del PF_HEAD de element del ")"
+    "(" PF_HEAD element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5
+        $3
       };
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
 tail_def:
-    "(" del PF_TAIL de element del ")"
+    "(" PF_TAIL element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5
+        $3
       };
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
 cons_def:
-    "(" del PF_CONS de element de element del ")"
+    "(" PF_CONS element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7
+        $3,
+        $4
       };
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
 setq_def:
-    "(" del SF_SETQ de atom de element del ")"
+    "(" SF_SETQ atom element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        std::make_shared<flang::ASTNode>(flang::ASTNodeType::LEAF, $5),
-        $7
+        std::make_shared<flang::ASTNode>(flang::ASTNodeType::LEAF, $3),
+        $4
       };
 
       $$ = std::make_shared<flang::SetqNode>(t, children);
     }
 
 not_def:
-    "(" del PF_NOT de element del ")"
+    "(" PF_NOT element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, "not");
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5
+        $3
       };
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
 func_call:
-    "(" del atom de elements del ")"
+    "(" IDENTIFIER elements ")"
     {
-      std::shared_ptr<flang::Token> t = $3; 
-      std::vector<std::shared_ptr<flang::ASTNode>> children = $5;
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2);
+      std::vector<std::shared_ptr<flang::ASTNode>> children = $3;
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
     }
 
 prog_def:
-    "(" del SF_PROG de elements del ")"
+    "(" SF_PROG list elements ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
-      $$ = std::make_shared<flang::ProgNode>(t, $5);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      $4.insert($4.begin(), $3);
+      $$ = std::make_shared<flang::ProgNode>(t, $4);
     }
 
 cond_def:
-    "(" del SF_COND de element de element del ")"
+    "(" SF_COND element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
 
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7
+        $3,
+        $4
       };
 
       $$ = std::make_shared<flang::CondNode>(t, children);
     }
-    | "(" del SF_COND de element de element de element del ")"
+    | "(" SF_COND element element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
 
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $5,
-        $7,
-        $9
+        $3,
+        $4,
+        $5
       };
 
       $$ = std::make_shared<flang::CondNode>(t, children);
     } 
 
 list:
-  "(" del elements del ")" { $$ = std::make_shared<flang::ListNode>($3); }
+  "(" elements ")" { $$ = std::make_shared<flang::ListNode>($2); }
 
 stmt:
   func_def {$$ = $1;}
@@ -379,7 +376,6 @@ stmt:
   | prog_def {$$ = $1;}
   | cond_def {$$ = $1;}
   ;
-
 
 atom:
   IDENTIFIER { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
@@ -415,22 +411,6 @@ literal:
   | TRUE { $$ = std::make_shared<flang::Token>(flang::TokenType::BOOL, $1); } 
   | FALSE { $$ = std::make_shared<flang::Token>(flang::TokenType::BOOL, $1); }
   | NULL { $$ = std::make_shared<flang::Token>(flang::TokenType::NUL, $1); }
-
-// 0 or more delimiters
-del:
-  { $$ = "";}
-  | d del
-
-// 1 or more delimiters
-de:
-  d
-  | d de
-
-
-// delimiter
-d:
-  SYM_SPACE | SYM_TAB | EOL
-
 
 %%
 

@@ -152,6 +152,8 @@ public:
 
 class ProgNode : public ASTNode {
 public:
+  shared_ptr<ASTNode> locals;
+
   ProgNode();
   ProgNode(shared_ptr<Token> const &head,
            vector<shared_ptr<ASTNode>> const &children);

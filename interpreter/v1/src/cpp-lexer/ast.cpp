@@ -294,16 +294,25 @@ ProgNode::ProgNode() {}
 
 ProgNode::ProgNode(shared_ptr<Token> const &head,
                    vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(PROG, head, children) {}
+    : ASTNode(PROG, head, children) {
+  this->locals = children[0];
+}
 
 void ProgNode::print(shared_ptr<Agraph_t> const &graph) {
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "ProgNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
 
-  for (auto child : children) {
-    child->print(graph);
-    agedge(graph.get(), graph_node.get(), child->graph_node.get(), NULL, TRUE);
+  locals->print(graph);
+
+  Agedge_t *l = agedge(graph.get(), graph_node.get(), locals->graph_node.get(),
+                       NULL, TRUE);
+  agsafeset(l, (char *)"label", "locals", (char *)"");
+
+  for (int i = 1; i < children.size(); i++) {
+    children[i]->print(graph);
+    Agedge_t *e = agedge(graph.get(), graph_node.get(),
+                         children[i]->graph_node.get(), NULL, TRUE);
   }
 }
 

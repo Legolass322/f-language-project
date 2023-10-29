@@ -1062,18 +1062,18 @@ YY_RULE_SETUP
 case 40:
 YY_RULE_SETUP
 #line 81 "scanner.l"
-{loc.step(); return yy::parser::make_SYM_SPACE(yytext, loc);}
+{loc.step();}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
 #line 82 "scanner.l"
-{loc.step(); return yy::parser::make_SYM_TAB(yytext, loc);}
+{loc.step();}
 	YY_BREAK
 case 42:
 /* rule 42 can match eol */
 YY_RULE_SETUP
 #line 83 "scanner.l"
-{loc.lines(yyleng); loc.step(); return yy::parser::make_EOL(yytext, loc);}
+{loc.lines(yyleng); loc.step(); }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
