@@ -198,6 +198,11 @@ ListNode::ListNode(vector<shared_ptr<ASTNode>> const &children)
   this->children = children;
 }
 
+ListNode::ListNode(bool is_quote, vector<shared_ptr<ASTNode>> const &children)
+    : ASTNode(is_quote ? QUOTE_LIST : LIST, nullptr, children) {
+  this->children = children;
+}
+
 void ListNode::print(shared_ptr<Agraph_t> const &graph) {
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "ListNode\n";

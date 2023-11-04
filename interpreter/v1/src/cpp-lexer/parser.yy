@@ -145,7 +145,7 @@ lambda_def:
 quote_def:
     "(" SF_QUOTE elements ")"
     {
-      $$ = std::make_shared<flang::ListNode>($3); 
+      $$ = std::make_shared<flang::ListNode>(true, $3); 
     }
 
 return_def:

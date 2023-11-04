@@ -39,6 +39,7 @@ enum ASTNodeType {
   FUNCCALL,
   LAMBDA,
   LIST,
+  QUOTE_LIST,
   RETURN,
   BREAK,
   COND,
@@ -110,6 +111,7 @@ class ListNode : public ASTNode {
 public:
   ListNode();
   ListNode(vector<shared_ptr<ASTNode>> const &children);
+  ListNode(bool is_quote, vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
 };
