@@ -11,9 +11,7 @@
   #include <string>
   #include <iostream>
   #include <memory>
-  #include <graphviz/gvc.h>
   #include "ast.h"
-  #define NO_LAYOUT_OR_RENDERING
   class Driver;
 
 }
@@ -86,34 +84,8 @@ program:
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, "program");
       $$ = std::make_shared<flang::ASTNode>(flang::ASTNodeType::PROGRAM, t, $1);
+      driver.parse_ast($$);
 
-    #ifdef NO_LAYOUT_OR_RENDERING
-
-      GVC_t *gvc = gvContext();
-
-    #endif
-
-      std::shared_ptr<Agraph_t> ast = std::shared_ptr<Agraph_t>(agopen((char*)"ast", Agdirected, NULL));
-
-      $$->print(ast);
-      
-    #ifdef NO_LAYOUT_OR_RENDERING
-
-      FILE *astdot = fopen((char*)"ast.dot", (char*)"w");
-      agwrite(ast.get(), astdot);
-
-    #else
-
-      gvLayout(gvc, ast.get(), (char*)"dot");
-      gvRender(gvc, ast.get(), (char*)"png", fopen((char*)"ast.png", (char*)"w"));
-      gvFreeLayout(gvc, ast.get());
-
-    #endif
-
-      fclose(astdot);
-      gvFreeContext(gvc);
-
-      system("dot -Tsvg ast.dot > ast.svg");
     }
 
 elements:

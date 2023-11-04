@@ -1,5 +1,6 @@
 #ifndef DRIVER_HH
 #define DRIVER_HH
+#include "ast.h"
 #include "parser.tab.hh"
 #include <map>
 #include <string>
@@ -11,7 +12,9 @@ class Driver {
 public:
   Driver();
 
-  std::map<std::string, std::string> variables;
+  std::shared_ptr<flang::ASTNode> ast;
+
+  void parse_ast(const std::shared_ptr<flang::ASTNode> &ast);
 
   int parse(const std::string &f);
 

@@ -12,3 +12,7 @@ int Driver::parse(const std::string &f) {
   scan_end();
   return res;
 }
+
+void Driver::parse_ast(const std::shared_ptr<flang::ASTNode> &ast) {
+  this->ast = ast;
+}
