@@ -28,9 +28,10 @@ struct Span {
 struct Token {
   TokenType type;
   string value;
+  Span span;
 
   Token();
-  Token(TokenType type, string value);
+  Token(TokenType type, string value, Span span);
 };
 
 enum ASTNodeType {

@@ -1,5 +1,6 @@
 #include "ast.h"
 #include "driver.hh"
+#include "semantic_analyzer.h"
 #include <graphviz/gvc.h>
 #include <iostream>
 
@@ -23,6 +24,8 @@ void generate_graph_svg(std::shared_ptr<flang::ASTNode> const &ast) {
 int main(int argc, char *argv[]) {
   int res = 0;
   Driver drv;
+  SemanticAnalyzer semantic_analyzer;
+
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-p"))
       drv.trace_parsing = true;
@@ -30,6 +33,8 @@ int main(int argc, char *argv[]) {
       drv.trace_scanning = true;
     else if (!drv.parse(argv[i])) {
       std::cout << "Parsing successful" << '\n';
+      semantic_analyzer.analyze(drv.ast);
+      std::cout << "Semantic analysis successful" << '\n';
       generate_graph_svg(drv.ast);
       std::cout << "Graphviz file generated" << '\n';
       std::cout << "Done" << '\n';

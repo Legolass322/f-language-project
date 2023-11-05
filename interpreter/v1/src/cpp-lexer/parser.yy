@@ -82,7 +82,7 @@
 program:
     elements
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, "program");
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, "program", flang::Span({@1.begin.line, @1.begin.column}));
       $$ = std::make_shared<flang::ASTNode>(flang::ASTNodeType::PROGRAM, t, $1);
       driver.parse_ast($$);
 
@@ -119,8 +119,8 @@ element:
 func_def:
     "(" SF_FUNC IDENTIFIER list stmt ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
-      std::shared_ptr<flang::Token> id = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $3);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
+      std::shared_ptr<flang::Token> id = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $3, flang::Span({@3.begin.line, @3.begin.column}));
       vector<std::shared_ptr<flang::ASTNode>> children = {
         std::make_shared<flang::ASTNode>(flang::ASTNodeType::LEAF, id),
         $4,
@@ -133,7 +133,7 @@ func_def:
 lambda_def:
     "(" SF_LAMBDA list stmt ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       vector<std::shared_ptr<flang::ASTNode>> children = {
         $3,
         $4
@@ -151,7 +151,7 @@ quote_def:
 return_def:
     "(" SF_RETURN element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3
       };
@@ -162,14 +162,14 @@ return_def:
 break_def:
     "(" SF_BREAK ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       $$ = std::make_shared<flang::ASTNode>(flang::ASTNodeType::BREAK, t);
     }
 
 while_def:
-    "(" SF_WHILE element list ")"
+    "(" SF_WHILE element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       vector<std::shared_ptr<flang::ASTNode>> children = {
         $3,
         $4
@@ -181,7 +181,7 @@ while_def:
 plus_def:
     "(" PF_PLUS element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3,
         $4
@@ -193,7 +193,7 @@ plus_def:
 times_def:
     "(" PF_TIMES element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3,
         $4
@@ -205,7 +205,7 @@ times_def:
 divide_def:
     "(" PF_DIVIDE element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3,
         $4
@@ -217,7 +217,7 @@ divide_def:
 minus_def:
     "(" PF_MINUS element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3,
         $4
@@ -229,7 +229,7 @@ minus_def:
 head_def:
     "(" PF_HEAD element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3
       };
@@ -240,7 +240,7 @@ head_def:
 tail_def:
     "(" PF_TAIL element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3
       };
@@ -251,7 +251,7 @@ tail_def:
 cons_def:
     "(" PF_CONS element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3,
         $4
@@ -263,7 +263,7 @@ cons_def:
 setq_def:
     "(" SF_SETQ atom element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         std::make_shared<flang::ASTNode>(flang::ASTNodeType::LEAF, $3),
         $4
@@ -275,7 +275,7 @@ setq_def:
 not_def:
     "(" PF_NOT element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3
       };
@@ -286,7 +286,7 @@ not_def:
 func_call:
     "(" IDENTIFIER elements ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2, flang::Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<flang::ASTNode>> children = $3;
 
       $$ = std::make_shared<flang::FuncCallNode>(t, children);
@@ -295,7 +295,7 @@ func_call:
 prog_def:
     "(" SF_PROG list elements ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
       $4.insert($4.begin(), $3);
       $$ = std::make_shared<flang::ProgNode>(t, $4);
     }
@@ -303,7 +303,7 @@ prog_def:
 cond_def:
     "(" SF_COND element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3,
@@ -314,7 +314,7 @@ cond_def:
     }
     | "(" SF_COND element element element ")"
     {
-      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2);
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<flang::ASTNode>> children = {
         $3,
@@ -350,39 +350,39 @@ stmt:
   ;
 
 atom:
-  IDENTIFIER { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_PLUS  { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_TIMES { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_DIVIDE { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_MINUS { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_HEAD { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_TAIL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_CONS { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_EQUAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_NONEQUAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_LESS { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_LESSEQ { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_GREATER { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_GREATEREQ { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_ISINT { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_ISREAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_ISBOOL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_ISNULL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_ISATOM { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_ISLIST { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_AND { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_OR { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_XOR { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_NOT { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
-  | PF_EVAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1); }
+  IDENTIFIER { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_PLUS  { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_TIMES { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_DIVIDE { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_MINUS { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_HEAD { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_TAIL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_CONS { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_EQUAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_NONEQUAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_LESS { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_LESSEQ { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_GREATER { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_GREATEREQ { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_ISINT { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_ISREAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_ISBOOL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_ISNULL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_ISATOM { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_ISLIST { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_AND { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_OR { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_XOR { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_NOT { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | PF_EVAL { $$ = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $1, flang::Span({@1.begin.line, @1.begin.column})); }
   ;
 
 literal:
-  INT { $$ = std::make_shared<flang::Token>(flang::TokenType::INT, $1); }
-  | REAL { $$ = std::make_shared<flang::Token>(flang::TokenType::REAL, $1); } 
-  | TRUE { $$ = std::make_shared<flang::Token>(flang::TokenType::BOOL, $1); } 
-  | FALSE { $$ = std::make_shared<flang::Token>(flang::TokenType::BOOL, $1); }
-  | NULL { $$ = std::make_shared<flang::Token>(flang::TokenType::NUL, $1); }
+  INT { $$ = std::make_shared<flang::Token>(flang::TokenType::INT, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | REAL { $$ = std::make_shared<flang::Token>(flang::TokenType::REAL, $1, flang::Span({@1.begin.line, @1.begin.column})); } 
+  | TRUE { $$ = std::make_shared<flang::Token>(flang::TokenType::BOOL, $1, flang::Span({@1.begin.line, @1.begin.column})); } 
+  | FALSE { $$ = std::make_shared<flang::Token>(flang::TokenType::BOOL, $1, flang::Span({@1.begin.line, @1.begin.column})); }
+  | NULL { $$ = std::make_shared<flang::Token>(flang::TokenType::NUL, $1, flang::Span({@1.begin.line, @1.begin.column})); }
 
 %%
 

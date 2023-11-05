@@ -10,7 +10,8 @@ using namespace flang;
 
 Token::Token() {}
 
-Token::Token(TokenType type, string value) : type(type), value(value) {}
+Token::Token(TokenType type, string value, Span span)
+    : type(type), value(value), span(span) {}
 
 ASTNode::ASTNode(ASTNodeType node_type, shared_ptr<Token> const &head)
     : node_type(node_type), head(head) {
