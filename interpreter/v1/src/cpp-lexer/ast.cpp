@@ -342,3 +342,64 @@ void SetqNode::print(shared_ptr<Agraph_t> const &graph) {
                        NULL, TRUE);
   agsafeset(e, (char *)"label", "value", (char *)"");
 }
+
+bool flang::calculable(vector<shared_ptr<ASTNode>> const &args) {
+
+  for (auto arg : args) {
+    if (arg->node_type == LEAF && arg->head->type != NUL &&
+        arg->head->type != IDENTIFIER) {
+      continue;
+    } else
+      return false;
+  }
+
+  return true;
+}
+
+bool flang::calculable(const shared_ptr<ASTNode> &node) {
+  return node->node_type == LEAF && node->head->type != NUL &&
+         node->head->type != IDENTIFIER;
+}
+
+shared_ptr<Token> flang::calculate(vector<shared_ptr<ASTNode>> const &args,
+                                   string const &op) {
+  double result;
+
+  if (op == "plus") {
+    result = 0.0;
+    for (auto arg : args) {
+      double arg_val = stod(arg->head->value);
+      result += arg_val;
+    }
+  } else if (op == "minus") {
+    double arg_val = stod(args[0]->head->value);
+    result = arg_val;
+    for (int i = 1; i < args.size(); i++) {
+      arg_val = stod(args[i]->head->value);
+      result -= arg_val;
+    }
+  } else if (op == "times") {
+    result = 1.0;
+    for (auto arg : args) {
+      double arg_val = stod(arg->head->value);
+      result *= arg_val;
+    }
+  } else if (op == "divide") {
+    double arg_val = stod(args[0]->head->value);
+    result = arg_val;
+    for (int i = 1; i < args.size(); i++) {
+      arg_val = stod(args[i]->head->value);
+      result /= arg_val;
+    }
+  } else {
+    std::cerr << "Unknown operator" << std::endl;
+    exit(1);
+  }
+
+  double intpart;
+  if (modf(result, &intpart) == 0.0) {
+    return make_shared<Token>(INT, to_string((int)result), args[0]->head->span);
+  } else {
+    return make_shared<Token>(REAL, to_string(result), args[0]->head->span);
+  }
+}

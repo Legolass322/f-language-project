@@ -18,7 +18,7 @@ public:
   SemanticAnalyzer();
   ~SemanticAnalyzer();
 
-  void analyze(const shared_ptr<flang::ASTNode> &root);
+  void analyze(shared_ptr<flang::ASTNode> root);
 
 private:
   vector<Scope> scope_stack;
@@ -29,22 +29,21 @@ private:
       "not",    "xor",    "eval",    "isint",     "isreal", "isbool",
       "isnull", "isatom", "islist",  "head",      "tail",   "cons"};
 
-  void analyze_funcdef(const shared_ptr<flang::FuncDefNode> &node);
-  void analyze_funccall(const shared_ptr<flang::FuncCallNode> &node);
-  void analyze_lambda(const shared_ptr<flang::LambdaNode> &node);
-  void analyze_prog(const shared_ptr<flang::ProgNode> &node);
-  void analyze_node(const shared_ptr<flang::ASTNode> &node);
-  void analyze_setq(const shared_ptr<flang::SetqNode> &node);
-  void analyze_return(const shared_ptr<flang::ReturnNode> &node);
-  void analyze_break(const shared_ptr<flang::ASTNode> &node);
-  void analyze_while(const shared_ptr<flang::WhileNode> &node);
-  void analyze_cond(const shared_ptr<flang::CondNode> &node);
+  void analyze_funcdef(shared_ptr<flang::FuncDefNode> node);
+  void analyze_funccall(shared_ptr<flang::FuncCallNode> node);
+  void analyze_lambda(shared_ptr<flang::LambdaNode> node);
+  void analyze_prog(shared_ptr<flang::ProgNode> node);
+  void analyze_node(shared_ptr<flang::ASTNode> node);
+  void analyze_setq(shared_ptr<flang::SetqNode> node);
+  void analyze_return(shared_ptr<flang::ReturnNode> node);
+  void analyze_break(shared_ptr<flang::ASTNode> node);
+  void analyze_while(shared_ptr<flang::WhileNode> node);
+  void analyze_cond(shared_ptr<flang::CondNode> node);
 
-  shared_ptr<flang::ASTNode>
-  find_variable(const shared_ptr<flang::Token> &identifier);
-  shared_ptr<flang::ASTNode>
-  find_function(const shared_ptr<flang::Token> &identifier,
-                bool return_body = false);
+  void calculate_node(shared_ptr<flang::ASTNode> node);
+
+  shared_ptr<flang::ASTNode> find_variable(shared_ptr<flang::Token> identifier);
+  shared_ptr<flang::ASTNode> find_function(shared_ptr<flang::Token> identifier);
 };
 
 class RuntimeError : public exception {

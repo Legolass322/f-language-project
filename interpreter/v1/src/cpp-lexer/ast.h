@@ -176,6 +176,12 @@ public:
   void print(shared_ptr<Agraph_t> const &graph) override;
 };
 
+bool calculable(vector<shared_ptr<ASTNode>> const &args);
+bool calculable(shared_ptr<ASTNode> const &node);
+
+shared_ptr<Token> calculate(vector<shared_ptr<ASTNode>> const &args,
+                            string const &op);
+
 } // namespace flang
 
 #endif // AST_H

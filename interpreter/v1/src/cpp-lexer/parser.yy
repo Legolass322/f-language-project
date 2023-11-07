@@ -58,10 +58,11 @@
 %type <std::shared_ptr<flang::ProgNode>> prog_def
 %type <std::shared_ptr<flang::CondNode>> cond_def
 
-%type <std::shared_ptr<flang::FuncCallNode>> plus_def
-%type <std::shared_ptr<flang::FuncCallNode>> times_def
-%type <std::shared_ptr<flang::FuncCallNode>> divide_def
-%type <std::shared_ptr<flang::FuncCallNode>> minus_def
+%type <std::shared_ptr<flang::ASTNode>> plus_def
+%type <std::shared_ptr<flang::ASTNode>> times_def
+%type <std::shared_ptr<flang::ASTNode>> divide_def
+%type <std::shared_ptr<flang::ASTNode>> minus_def
+
 %type <std::shared_ptr<flang::FuncCallNode>> head_def
 %type <std::shared_ptr<flang::FuncCallNode>> tail_def
 %type <std::shared_ptr<flang::FuncCallNode>> cons_def
@@ -179,51 +180,36 @@ while_def:
     }
 
 plus_def:
-    "(" PF_PLUS element element ")"
+    "(" PF_PLUS elements ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
-      std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $3,
-        $4
-      };
 
-      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+      $$ = std::make_shared<flang::FuncCallNode>(t, $3);
+
     }
 
 times_def:
-    "(" PF_TIMES element element ")"
+    "(" PF_TIMES elements ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
-      std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $3,
-        $4
-      };
 
-      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+      $$ = std::make_shared<flang::FuncCallNode>(t, $3);
     }
 
 divide_def:
-    "(" PF_DIVIDE element element ")"
+    "(" PF_DIVIDE elements ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
-      std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $3,
-        $4
-      };
 
-      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+      $$ = std::make_shared<flang::FuncCallNode>(t, $3);
     }
 
 minus_def:
-    "(" PF_MINUS element element ")"
+    "(" PF_MINUS elements ")"
     {
       std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::KEYWORD, $2, flang::Span({@2.begin.line, @2.begin.column}));
-      std::vector<std::shared_ptr<flang::ASTNode>> children = {
-        $3,
-        $4
-      };
 
-      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+      $$ = std::make_shared<flang::FuncCallNode>(t, $3);
     }
 
 head_def:
