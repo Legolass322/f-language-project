@@ -18,7 +18,7 @@ public:
   SemanticAnalyzer();
   ~SemanticAnalyzer();
 
-  void analyze(shared_ptr<flang::ASTNode> root);
+  void analyze(shared_ptr<flang::ASTNode> &root);
 
 private:
   vector<Scope> scope_stack;
@@ -29,18 +29,20 @@ private:
       "not",    "xor",    "eval",    "isint",     "isreal", "isbool",
       "isnull", "isatom", "islist",  "head",      "tail",   "cons"};
 
-  void analyze_funcdef(shared_ptr<flang::FuncDefNode> node);
-  void analyze_funccall(shared_ptr<flang::FuncCallNode> node);
-  void analyze_lambda(shared_ptr<flang::LambdaNode> node);
-  void analyze_prog(shared_ptr<flang::ProgNode> node);
-  void analyze_node(shared_ptr<flang::ASTNode> node);
-  void analyze_setq(shared_ptr<flang::SetqNode> node);
-  void analyze_return(shared_ptr<flang::ReturnNode> node);
-  void analyze_break(shared_ptr<flang::ASTNode> node);
-  void analyze_while(shared_ptr<flang::WhileNode> node);
-  void analyze_cond(shared_ptr<flang::CondNode> node);
+  shared_ptr<flang::ASTNode>
+  analyze_funcdef(shared_ptr<flang::FuncDefNode> node);
+  shared_ptr<flang::ASTNode>
+  analyze_funccall(shared_ptr<flang::FuncCallNode> node);
+  shared_ptr<flang::ASTNode> analyze_lambda(shared_ptr<flang::LambdaNode> node);
+  shared_ptr<flang::ASTNode> analyze_prog(shared_ptr<flang::ProgNode> node);
+  shared_ptr<flang::ASTNode> analyze_node(shared_ptr<flang::ASTNode> node);
+  shared_ptr<flang::ASTNode> analyze_setq(shared_ptr<flang::SetqNode> node);
+  shared_ptr<flang::ASTNode> analyze_return(shared_ptr<flang::ReturnNode> node);
+  shared_ptr<flang::ASTNode> analyze_break(shared_ptr<flang::ASTNode> node);
+  shared_ptr<flang::ASTNode> analyze_while(shared_ptr<flang::WhileNode> node);
+  shared_ptr<flang::ASTNode> analyze_cond(shared_ptr<flang::CondNode> node);
 
-  void calculate_node(shared_ptr<flang::ASTNode> node);
+  shared_ptr<flang::ASTNode> calculate_node(shared_ptr<flang::ASTNode> node);
 
   shared_ptr<flang::ASTNode> find_variable(shared_ptr<flang::Token> identifier);
   shared_ptr<flang::ASTNode> find_function(shared_ptr<flang::Token> identifier);

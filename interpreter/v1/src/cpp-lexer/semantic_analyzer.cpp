@@ -11,7 +11,7 @@ SemanticAnalyzer::SemanticAnalyzer() {}
 
 SemanticAnalyzer::~SemanticAnalyzer() {}
 
-void SemanticAnalyzer::analyze(shared_ptr<ASTNode> root) {
+void SemanticAnalyzer::analyze(shared_ptr<ASTNode> &root) {
   scope_stack.push_back(Scope(map<string, shared_ptr<ASTNode>>(), PROGRAM));
 
   for (auto &node : root->children) {
@@ -41,37 +41,28 @@ SemanticAnalyzer::find_function(shared_ptr<Token> identifier) {
   throw FunctionNotFoundError(identifier->span, identifier_str);
 }
 
-void SemanticAnalyzer::analyze_node(shared_ptr<ASTNode> node) {
+shared_ptr<ASTNode> SemanticAnalyzer::analyze_node(shared_ptr<ASTNode> node) {
   switch (node->node_type) {
   case FUNCDEF:
-    analyze_funcdef(static_pointer_cast<FuncDefNode>(node));
-    return;
+    return analyze_funcdef(static_pointer_cast<FuncDefNode>(node));
   case FUNCCALL:
-    analyze_funccall(static_pointer_cast<FuncCallNode>(node));
-    return;
+    return analyze_funccall(static_pointer_cast<FuncCallNode>(node));
   case LAMBDA:
-    analyze_lambda(static_pointer_cast<LambdaNode>(node));
-    return;
+    return analyze_lambda(static_pointer_cast<LambdaNode>(node));
   case PROG:
-    analyze_prog(static_pointer_cast<ProgNode>(node));
-    return;
+    return analyze_prog(static_pointer_cast<ProgNode>(node));
   case SETQ:
-    analyze_setq(static_pointer_cast<SetqNode>(node));
-    return;
+    return analyze_setq(static_pointer_cast<SetqNode>(node));
   case RETURN:
-    analyze_return(static_pointer_cast<ReturnNode>(node));
-    return;
+    return analyze_return(static_pointer_cast<ReturnNode>(node));
   case WHILE:
-    analyze_while(static_pointer_cast<WhileNode>(node));
-    return;
+    return analyze_while(static_pointer_cast<WhileNode>(node));
   case COND:
-    analyze_cond(static_pointer_cast<CondNode>(node));
-    return;
+    return analyze_cond(static_pointer_cast<CondNode>(node));
   case BREAK:
-    analyze_break(node);
-    return;
+    return analyze_break(node);
   case QUOTE_LIST:
-    return;
+    return node;
   default:
     break;
   }
@@ -82,11 +73,14 @@ void SemanticAnalyzer::analyze_node(shared_ptr<ASTNode> node) {
   }
 
   for (auto &child : node->children) {
-    analyze_node(child);
+    child = analyze_node(child);
   }
+
+  return node;
 }
 
-void SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
+shared_ptr<ASTNode>
+SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
   string identifier = node->name->value;
   Scope &scope = scope_stack.back();
 
@@ -118,11 +112,13 @@ void SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
     scope.variables[identifier] = child;
   }
 
-  analyze_node(node->body);
+  node->body = analyze_node(node->body);
   scope_stack.pop_back();
+  return node;
 }
 
-void SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
+shared_ptr<ASTNode>
+SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
   string identifier = node->name->value;
   Scope &scope = scope_stack.back();
 
@@ -138,19 +134,20 @@ void SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
     else {
       if (identifier == "plus" || identifier == "minus" ||
           identifier == "times" || identifier == "divide") {
-        calculate_node(node);
-        cout << "calculate_node " << node->head->value << endl;
-        return;
+        return calculate_node(node);
       }
     }
   }
 
   for (auto &child : node->children) {
-    analyze_node(child);
+    child = analyze_node(child);
   }
+
+  return node;
 }
 
-void SemanticAnalyzer::analyze_lambda(shared_ptr<LambdaNode> node) {
+shared_ptr<ASTNode>
+SemanticAnalyzer::analyze_lambda(shared_ptr<LambdaNode> node) {
   cout << "analyze_lambda" << endl;
   Scope &scope = scope_stack.back();
 
@@ -169,11 +166,12 @@ void SemanticAnalyzer::analyze_lambda(shared_ptr<LambdaNode> node) {
     scope.variables[identifier] = child;
   }
 
-  analyze_node(node->body);
+  node->body = analyze_node(node->body);
   scope_stack.pop_back();
+  return node;
 }
 
-void SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
+shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
   cout << "analyze_prog" << endl;
   scope_stack.push_back(Scope(map<string, shared_ptr<ASTNode>>(), PROG));
 
@@ -191,13 +189,14 @@ void SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
   }
 
   for (auto it = node->children.begin() + 1; it != node->children.end(); ++it) {
-    analyze_node(*it);
+    *it = analyze_node(*it);
   }
 
   scope_stack.pop_back();
+  return node;
 }
 
-void SemanticAnalyzer::analyze_setq(shared_ptr<SetqNode> node) {
+shared_ptr<ASTNode> SemanticAnalyzer::analyze_setq(shared_ptr<SetqNode> node) {
   cout << "analyze_setq" << endl;
   string identifier = node->name->value;
   Scope &scope = scope_stack.back();
@@ -211,19 +210,21 @@ void SemanticAnalyzer::analyze_setq(shared_ptr<SetqNode> node) {
   cout << "successfully added variable " << identifier << endl;
   scope.variables[identifier] = node;
 
-  analyze_node(node->value);
+  node->value = analyze_node(node->value);
+  return node;
 }
 
-void SemanticAnalyzer::analyze_return(shared_ptr<ReturnNode> node) {
+shared_ptr<ASTNode>
+SemanticAnalyzer::analyze_return(shared_ptr<ReturnNode> node) {
   cout << "analyze_return" << endl;
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
     switch (it->scope_type) {
     case FUNCDEF:
-      return;
+      return node;
     case LAMBDA:
-      return;
+      return node;
     case PROG:
-      return;
+      return node;
     default:
       break;
     }
@@ -232,12 +233,12 @@ void SemanticAnalyzer::analyze_return(shared_ptr<ReturnNode> node) {
   throw RuntimeError(node->head->span, "Return is not allowed here");
 }
 
-void SemanticAnalyzer::analyze_break(shared_ptr<ASTNode> node) {
+shared_ptr<ASTNode> SemanticAnalyzer::analyze_break(shared_ptr<ASTNode> node) {
   cout << "analyze_break" << endl;
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
     switch (it->scope_type) {
     case WHILE:
-      return;
+      return node;
     default:
       break;
     }
@@ -246,26 +247,30 @@ void SemanticAnalyzer::analyze_break(shared_ptr<ASTNode> node) {
   throw RuntimeError(node->head->span, "Break is not allowed here");
 }
 
-void SemanticAnalyzer::analyze_while(shared_ptr<WhileNode> node) {
+shared_ptr<ASTNode>
+SemanticAnalyzer::analyze_while(shared_ptr<WhileNode> node) {
 
   cout << "analyze_while" << endl;
   scope_stack.push_back(Scope(map<string, shared_ptr<ASTNode>>(), WHILE));
-  analyze_node(node->cond);
-  analyze_node(node->body);
+  node->cond = analyze_node(node->cond);
+  node->body = analyze_node(node->body);
   scope_stack.pop_back();
+  return node;
 }
 
-void SemanticAnalyzer::analyze_cond(shared_ptr<CondNode> node) {
+shared_ptr<ASTNode> SemanticAnalyzer::analyze_cond(shared_ptr<CondNode> node) {
   cout << "analyze_cond" << endl;
   for (auto &child : node->children) {
-    analyze_node(child);
+    child = analyze_node(child);
   }
+
+  return node;
 }
 
-void SemanticAnalyzer::calculate_node(shared_ptr<ASTNode> node) {
+shared_ptr<ASTNode> SemanticAnalyzer::calculate_node(shared_ptr<ASTNode> node) {
   cout << "calculate_node" << endl;
   for (auto &child : node->children) {
-    analyze_node(child);
+    child = analyze_node(child);
   }
 
   vector<shared_ptr<ASTNode>> args;
@@ -279,10 +284,10 @@ void SemanticAnalyzer::calculate_node(shared_ptr<ASTNode> node) {
   }
 
   if (left.size() == 0) {
-    node = make_shared<ASTNode>(LEAF, calculate(args, node->head->value));
+    return make_shared<ASTNode>(LEAF, calculate(args, node->head->value));
   } else {
-    node->children = left;
-    node->children.push_back(
+    left.push_back(
         make_shared<ASTNode>(LEAF, calculate(args, node->head->value)));
+    return make_shared<FuncCallNode>(node->head, left);
   }
 }
