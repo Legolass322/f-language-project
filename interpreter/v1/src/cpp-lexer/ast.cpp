@@ -8,7 +8,7 @@
 
 using namespace flang;
 
-Token::Token() {}
+Token::Token() : type(NUL), value(""), span(Span({0, 0})) {}
 
 Token::Token(TokenType type, string value, Span span)
     : type(type), value(value), span(span) {}
@@ -110,6 +110,20 @@ void ASTNode::print(shared_ptr<Agraph_t> const &graph) {
       break;
     }
 
+    case LEAF: {
+      child->print(graph);
+      agedge(graph.get(), graph_node.get(), child->graph_node.get(), NULL,
+             TRUE);
+      break;
+    }
+
+    case PROGRAM: {
+      child->print(graph);
+      agedge(graph.get(), graph_node.get(), child->graph_node.get(), NULL,
+             TRUE);
+      break;
+    }
+
     default: {
       cout << "Unknown node type" << endl;
       break;
@@ -129,6 +143,7 @@ FuncDefNode::FuncDefNode(shared_ptr<Token> const &head,
 }
 
 void FuncDefNode::print(shared_ptr<Agraph_t> const &graph) {
+  cout << "print funcdef " << name->value << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "FuncDefNode\n" + name->value;
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -154,6 +169,7 @@ FuncCallNode::FuncCallNode(shared_ptr<Token> const &head,
 }
 
 void FuncCallNode::print(shared_ptr<Agraph_t> const &graph) {
+  cout << "print funccall " << name->value << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "FuncCallNode\n" + name->value;
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -176,6 +192,7 @@ LambdaNode::LambdaNode(shared_ptr<Token> const &head,
 }
 
 void LambdaNode::print(shared_ptr<Agraph_t> const &graph) {
+  cout << "print lambda" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "LambdaNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -195,16 +212,17 @@ void LambdaNode::print(shared_ptr<Agraph_t> const &graph) {
 ListNode::ListNode() {}
 
 ListNode::ListNode(vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(LIST, nullptr, children) {
+    : ASTNode(LIST, make_shared<Token>(), children) {
   this->children = children;
 }
 
 ListNode::ListNode(bool is_quote, vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(is_quote ? QUOTE_LIST : LIST, nullptr, children) {
+    : ASTNode(is_quote ? QUOTE_LIST : LIST, make_shared<Token>(), children) {
   this->children = children;
 }
 
 void ListNode::print(shared_ptr<Agraph_t> const &graph) {
+  cout << "print list" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "ListNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -224,6 +242,7 @@ ReturnNode::ReturnNode(shared_ptr<Token> const &head,
 }
 
 void ReturnNode::print(shared_ptr<Agraph_t> const &graph) {
+  cout << "print return" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "ReturnNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -233,6 +252,7 @@ void ReturnNode::print(shared_ptr<Agraph_t> const &graph) {
   Agedge_t *e = agedge(graph.get(), graph_node.get(), value->graph_node.get(),
                        NULL, TRUE);
   agsafeset(e, (char *)"label", "value", (char *)"");
+  cout << "print return end" << endl;
 }
 
 CondNode::CondNode() {}
@@ -249,6 +269,7 @@ CondNode::CondNode(shared_ptr<Token> const &head,
 }
 
 void CondNode::print(shared_ptr<Agraph_t> const &graph) {
+  cout << "print cond" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "CondNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -281,6 +302,7 @@ WhileNode::WhileNode(shared_ptr<Token> const &head,
 }
 
 void WhileNode::print(shared_ptr<Agraph_t> const &graph) {
+  cout << "print while" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "WhileNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -305,6 +327,7 @@ ProgNode::ProgNode(shared_ptr<Token> const &head,
 }
 
 void ProgNode::print(shared_ptr<Agraph_t> const &graph) {
+  cout << "print prog" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "ProgNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -332,6 +355,7 @@ SetqNode::SetqNode(shared_ptr<Token> const &head,
 }
 
 void SetqNode::print(shared_ptr<Agraph_t> const &graph) {
+  cout << "print setq" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "SetqNode\n" + name->value;
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");

@@ -115,7 +115,7 @@ element:
         $$ = std::make_shared<flang::ASTNode>(flang::ASTNodeType::LEAF, $1);
       }
     | stmt { $$ = $1;}
-    | "(" ")" { $$ = std::make_shared<flang::ListNode>();}
+    | "(" ")" { $$ = std::make_shared<flang::ListNode>(vector<shared_ptr<flang::ASTNode>>());}
 
 func_def:
     "(" SF_FUNC IDENTIFIER list stmt ")"
