@@ -29,6 +29,8 @@ ASTNode::ASTNode() {}
 
 ASTNode::~ASTNode() {}
 
+void ASTNode::update() { this->children = children; }
+
 void ASTNode::print(shared_ptr<Agraph_t> const &graph) {
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   agsafeset(graph_node.get(), (char *)"label", head->value.c_str(), (char *)"");
@@ -142,6 +144,11 @@ FuncDefNode::FuncDefNode(shared_ptr<Token> const &head,
   this->body = children[2];
 }
 
+void FuncDefNode::update() {
+  this->params = children[1];
+  this->body = children[2];
+}
+
 void FuncDefNode::print(shared_ptr<Agraph_t> const &graph) {
   cout << "print funcdef " << name->value << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
@@ -168,6 +175,8 @@ FuncCallNode::FuncCallNode(shared_ptr<Token> const &head,
   this->args = children;
 }
 
+void FuncCallNode::update() { this->args = children; }
+
 void FuncCallNode::print(shared_ptr<Agraph_t> const &graph) {
   cout << "print funccall " << name->value << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
@@ -187,6 +196,11 @@ LambdaNode::LambdaNode() {}
 LambdaNode::LambdaNode(shared_ptr<Token> const &head,
                        vector<shared_ptr<ASTNode>> const &children)
     : ASTNode(LAMBDA, head, children) {
+  this->params = children[0];
+  this->body = children[1];
+}
+
+void LambdaNode::update() {
   this->params = children[0];
   this->body = children[1];
 }
@@ -221,6 +235,8 @@ ListNode::ListNode(bool is_quote, vector<shared_ptr<ASTNode>> const &children)
   this->children = children;
 }
 
+void ListNode::update() { this->children = children; }
+
 void ListNode::print(shared_ptr<Agraph_t> const &graph) {
   cout << "print list" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
@@ -241,6 +257,8 @@ ReturnNode::ReturnNode(shared_ptr<Token> const &head,
   this->value = children[0];
 }
 
+void ReturnNode::update() { this->value = children[0]; }
+
 void ReturnNode::print(shared_ptr<Agraph_t> const &graph) {
   cout << "print return" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
@@ -260,6 +278,15 @@ CondNode::CondNode() {}
 CondNode::CondNode(shared_ptr<Token> const &head,
                    vector<shared_ptr<ASTNode>> const &children)
     : ASTNode(COND, head, children) {
+  this->cond = children[0];
+  this->body_true = children[1];
+
+  if (children.size() == 3) {
+    this->body_false = children[2];
+  }
+}
+
+void CondNode::update() {
   this->cond = children[0];
   this->body_true = children[1];
 
@@ -301,6 +328,11 @@ WhileNode::WhileNode(shared_ptr<Token> const &head,
   this->body = children[1];
 }
 
+void WhileNode::update() {
+  this->cond = children[0];
+  this->body = children[1];
+}
+
 void WhileNode::print(shared_ptr<Agraph_t> const &graph) {
   cout << "print while" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
@@ -326,6 +358,8 @@ ProgNode::ProgNode(shared_ptr<Token> const &head,
   this->locals = children[0];
 }
 
+void ProgNode::update() { this->locals = children[0]; }
+
 void ProgNode::print(shared_ptr<Agraph_t> const &graph) {
   cout << "print prog" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
@@ -350,6 +384,11 @@ SetqNode::SetqNode() {}
 SetqNode::SetqNode(shared_ptr<Token> const &head,
                    vector<shared_ptr<ASTNode>> const &children)
     : ASTNode(SETQ, head, children) {
+  this->name = children[0]->head;
+  this->value = children[1];
+}
+
+void SetqNode::update() {
   this->name = children[0]->head;
   this->value = children[1];
 }

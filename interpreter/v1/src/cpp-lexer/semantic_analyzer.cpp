@@ -124,19 +124,19 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
   vector<shared_ptr<ASTNode>> params = func_copy->children[1]->children;
   map<string, string> tmps;
 
+  if (args.size() != params.size())
+    throw WrongNumberOfArgumentsError(func_copy->head->span, identifier,
+                                      params.size(), args.size());
+
   cout << "get_inlined_function" << endl;
   for (auto &param : params) {
     string tmp = "tmp" + to_string(tmps.size());
     tmps[param->head->value] = tmp;
   }
 
-  cout << "tmps size " << tmps.size() << endl;
-
   for (auto &child : node_body->children) {
     child = inline_function(child, tmps);
   }
-
-  cout << "children inlining finished" << endl;
 
   vector<shared_ptr<ASTNode>> setqs;
   setqs.push_back(make_shared<ListNode>());
@@ -199,6 +199,7 @@ SemanticAnalyzer::find_function(shared_ptr<Token> identifier) {
 }
 
 shared_ptr<ASTNode> SemanticAnalyzer::analyze_node(shared_ptr<ASTNode> node) {
+  cout << "analyze_node " << node->head->value << endl;
   switch (node->node_type) {
   case FUNCDEF:
     return analyze_funcdef(static_pointer_cast<FuncDefNode>(node));
@@ -270,7 +271,8 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
     scope.variables[identifier] = child;
   }
 
-  node->body = analyze_node(node->body);
+  node->children[2] = analyze_node(node->body);
+  node->update();
 
   // remove variables that has 0 referrers
   for (auto it = scope_stack.back().variables.rbegin();
@@ -281,6 +283,12 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
           remove_variable(node, scope_stack.back(), it->first));
     }
   }
+
+  node->update();
+
+  // Update function in functions map
+  cout << "updating function " << identifier << endl;
+  functions[identifier] = node;
 
   scope_stack.pop_back();
   return node;
@@ -304,7 +312,7 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
 
     return get_inlined_function(node->name->value, args);
 
-  } catch (RuntimeError &e) {
+  } catch (FunctionNotFoundError &e) {
     // Function not found, check if it is a predefined function
     if (find(PF_FUNCTIONS.begin(), PF_FUNCTIONS.end(), identifier) ==
         PF_FUNCTIONS.end())
@@ -320,6 +328,8 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
   for (auto &child : node->children) {
     child = analyze_node(child);
   }
+
+  node->update();
 
   return node;
 }
@@ -344,7 +354,8 @@ SemanticAnalyzer::analyze_lambda(shared_ptr<LambdaNode> node) {
     scope.variables[identifier] = child;
   }
 
-  node->body = analyze_node(node->body);
+  node->children[1] = analyze_node(node->body);
+  node->update();
 
   for (auto it = scope_stack.back().variables.rbegin();
        it != scope_stack.back().variables.rend(); ++it) {
@@ -354,6 +365,7 @@ SemanticAnalyzer::analyze_lambda(shared_ptr<LambdaNode> node) {
           remove_variable(node, scope_stack.back(), it->first));
     }
   }
+  node->update();
   scope_stack.pop_back();
   return node;
 }
@@ -379,6 +391,8 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
     *it = analyze_node(*it);
   }
 
+  node->update();
+
   for (auto it = scope_stack.back().variables.rbegin();
        it != scope_stack.back().variables.rend(); ++it) {
     if (it->second.referrers == 0) {
@@ -387,6 +401,8 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
           remove_variable(node, scope_stack.back(), it->first));
     }
   }
+
+  node->update();
 
   scope_stack.pop_back();
   return node;
@@ -406,14 +422,16 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_setq(shared_ptr<SetqNode> node) {
   cout << "successfully added variable " << identifier << endl;
   scope.variables[identifier] = node;
 
-  node->value = analyze_node(node->value);
+  node->children[1] = analyze_node(node->value);
+  node->update();
   return node;
 }
 
 shared_ptr<ASTNode>
 SemanticAnalyzer::analyze_return(shared_ptr<ReturnNode> node) {
   cout << "analyze_return" << endl;
-  node->value = analyze_node(node->value);
+  node->children[0] = analyze_node(node->value);
+  node->update();
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
     switch (it->scope_type) {
     case FUNCDEF:
@@ -449,8 +467,9 @@ SemanticAnalyzer::analyze_while(shared_ptr<WhileNode> node) {
 
   cout << "analyze_while" << endl;
   scope_stack.push_back(Scope(map<string, Var>(), WHILE));
-  node->cond = analyze_node(node->cond);
-  node->body = analyze_node(node->body);
+  node->children[0] = analyze_node(node->cond);
+  node->children[1] = analyze_node(node->body);
+  node->update();
   scope_stack.pop_back();
   return node;
 }
@@ -461,6 +480,8 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_cond(shared_ptr<CondNode> node) {
     child = analyze_node(child);
   }
 
+  node->update();
+
   return node;
 }
 
@@ -469,6 +490,8 @@ shared_ptr<ASTNode> SemanticAnalyzer::calculate_node(shared_ptr<ASTNode> node) {
   for (auto &child : node->children) {
     child = analyze_node(child);
   }
+
+  node->update();
 
   vector<shared_ptr<ASTNode>> args;
   vector<shared_ptr<ASTNode>> left;

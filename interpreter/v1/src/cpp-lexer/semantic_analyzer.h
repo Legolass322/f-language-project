@@ -110,3 +110,12 @@ public:
   FunctionAlreadyDefinedError(Span span, string const &identifier)
       : RuntimeError(span, "Function " + identifier + " already defined") {}
 };
+
+class WrongNumberOfArgumentsError : public RuntimeError {
+public:
+  WrongNumberOfArgumentsError(Span span, string const &identifier, int expected,
+                              int got)
+      : RuntimeError(span, "Function " + identifier + " expected " +
+                               to_string(expected) + " arguments, got " +
+                               to_string(got)) {}
+};

@@ -66,6 +66,7 @@ public:
 
   virtual ~ASTNode();
   virtual void print(shared_ptr<Agraph_t> const &graph);
+  virtual void update();
 };
 
 class FuncDefNode : public ASTNode {
@@ -80,6 +81,7 @@ public:
               vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
+  void update() override;
 };
 
 class FuncCallNode : public ASTNode {
@@ -93,6 +95,7 @@ public:
                vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
+  void update() override;
 };
 
 class LambdaNode : public ASTNode {
@@ -106,6 +109,7 @@ public:
              vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
+  void update() override;
 };
 
 class ListNode : public ASTNode {
@@ -115,6 +119,7 @@ public:
   ListNode(bool is_quote, vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
+  void update() override;
 };
 
 class ReturnNode : public ASTNode {
@@ -126,6 +131,7 @@ public:
              vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
+  void update() override;
 };
 
 class CondNode : public ASTNode {
@@ -139,6 +145,7 @@ public:
            vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
+  void update() override;
 };
 
 class WhileNode : public ASTNode {
@@ -151,6 +158,7 @@ public:
             vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
+  void update() override;
 };
 
 class ProgNode : public ASTNode {
@@ -162,6 +170,7 @@ public:
            vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
+  void update() override;
 };
 
 class SetqNode : public ASTNode {
@@ -174,6 +183,7 @@ public:
            vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
+  void update() override;
 };
 
 bool calculable(vector<shared_ptr<ASTNode>> const &args);
