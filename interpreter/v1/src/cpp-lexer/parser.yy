@@ -63,6 +63,20 @@
 %type <std::shared_ptr<flang::ASTNode>> divide_def
 %type <std::shared_ptr<flang::ASTNode>> minus_def
 
+%type <std::shared_ptr<flang::FuncCallNode>> greater_def
+%type <std::shared_ptr<flang::FuncCallNode>> equal_def
+%type <std::shared_ptr<flang::FuncCallNode>> nonequal_def
+%type <std::shared_ptr<flang::FuncCallNode>> less_def
+%type <std::shared_ptr<flang::FuncCallNode>> lesseq_def
+%type <std::shared_ptr<flang::FuncCallNode>> greatereq_def
+
+%type <std::shared_ptr<flang::FuncCallNode>> isint_def
+%type <std::shared_ptr<flang::FuncCallNode>> isreal_def
+%type <std::shared_ptr<flang::FuncCallNode>> isbool_def
+%type <std::shared_ptr<flang::FuncCallNode>> isnull_def
+%type <std::shared_ptr<flang::FuncCallNode>> isatom_def
+%type <std::shared_ptr<flang::FuncCallNode>> islist_def
+
 %type <std::shared_ptr<flang::FuncCallNode>> head_def
 %type <std::shared_ptr<flang::FuncCallNode>> tail_def
 %type <std::shared_ptr<flang::FuncCallNode>> cons_def
@@ -311,6 +325,157 @@ cond_def:
       $$ = std::make_shared<flang::CondNode>(t, children);
     } 
 
+greater_def:
+    "(" PF_GREATER element element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2, flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3,
+        $4
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+equal_def:
+    "(" PF_EQUAL element element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2, flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3,
+        $4
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+nonequal_def:
+    "(" PF_NONEQUAL element element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2, flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3,
+        $4
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+less_def:
+    "(" PF_LESS element element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2, flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3,
+        $4
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+lesseq_def:
+    "(" PF_LESSEQ element element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2, flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3,
+        $4
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+greatereq_def:
+    "(" PF_GREATEREQ element element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, $2, flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3,
+        $4
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+isint_def:
+    "(" PF_ISINT element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, "isint", flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+isreal_def:
+    "(" PF_ISREAL element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER, "isreal", flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+isbool_def:
+    "(" PF_ISBOOL element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER,"isbool", flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+isnull_def:
+    "(" PF_ISNULL element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER,"isnull", flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+isatom_def:
+    "(" PF_ISATOM element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER,"isatom", flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+islist_def:
+    "(" PF_ISLIST element ")"
+    {
+      std::shared_ptr<flang::Token> t = std::make_shared<flang::Token>(flang::TokenType::IDENTIFIER,"islist", flang::Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<flang::ASTNode>> children = {
+        $3
+      };
+
+      $$ = std::make_shared<flang::FuncCallNode>(t, children);
+    }
+
+
 list:
   "(" elements ")" { $$ = std::make_shared<flang::ListNode>($2); }
 
@@ -333,6 +498,18 @@ stmt:
   | func_call {$$ = $1;}
   | prog_def {$$ = $1;}
   | cond_def {$$ = $1;}
+  | greater_def {$$ = $1;}
+  | equal_def {$$ = $1;}
+  | nonequal_def {$$ = $1;}
+  | less_def {$$ = $1;}
+  | lesseq_def {$$ = $1;}
+  | greatereq_def {$$ = $1;}
+  | isint_def {$$ = $1;}
+  | isreal_def {$$ = $1;}
+  | isbool_def {$$ = $1;}
+  | isnull_def {$$ = $1;}
+  | isatom_def {$$ = $1;}
+  | islist_def {$$ = $1;}
   ;
 
 atom:
