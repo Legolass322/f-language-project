@@ -29,7 +29,19 @@ ASTNode::ASTNode() {}
 
 ASTNode::~ASTNode() {}
 
-void ASTNode::update() { this->children = children; }
+shared_ptr<ASTNode> ASTNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
+  }
+
+  return make_shared<ASTNode>(node_type, head, children_copy);
+}
+
+bool ASTNode::calculable() {
+  return this->node_type == LEAF && this->head->type != NUL &&
+         this->head->type != IDENTIFIER;
+}
 
 void ASTNode::print(shared_ptr<Agraph_t> const &graph) {
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
@@ -138,31 +150,46 @@ FuncDefNode::FuncDefNode() {}
 
 FuncDefNode::FuncDefNode(shared_ptr<Token> const &head,
                          vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(FUNCDEF, head, children) {
-  this->name = children[0]->head;
-  this->params = children[1];
-  this->body = children[2];
+    : ASTNode(FUNCDEF, head, children) {}
+
+shared_ptr<Token> FuncDefNode::getName() { return children[0]->head; }
+shared_ptr<ASTNode> FuncDefNode::getBody() { return children[2]; }
+shared_ptr<ASTNode> FuncDefNode::getParams() { return children[1]; }
+
+void FuncDefNode::setName(shared_ptr<Token> const &name) {
+  children[0]->head = name;
 }
 
-void FuncDefNode::update() {
-  this->params = children[1];
-  this->body = children[2];
+void FuncDefNode::setBody(shared_ptr<ASTNode> const &body) {
+  children[2] = body;
+}
+
+void FuncDefNode::setParams(shared_ptr<ASTNode> const &params) {
+  children[1] = params;
+}
+
+shared_ptr<ASTNode> FuncDefNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
+  }
+
+  return make_shared<FuncDefNode>(head, children_copy);
 }
 
 void FuncDefNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "print funcdef " << name->value << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
-  string label = "FuncDefNode\n" + name->value;
+  string label = "FuncDefNode\n" + getName()->value;
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
 
-  params->print(graph);
-  body->print(graph);
+  getParams()->print(graph);
+  getBody()->print(graph);
 
-  Agedge_t *p = agedge(graph.get(), graph_node.get(), params->graph_node.get(),
-                       NULL, TRUE);
+  Agedge_t *p = agedge(graph.get(), graph_node.get(),
+                       getParams()->graph_node.get(), NULL, TRUE);
   agsafeset(p, (char *)"label", "params", (char *)"");
-  Agedge_t *b =
-      agedge(graph.get(), graph_node.get(), body->graph_node.get(), NULL, TRUE);
+  Agedge_t *b = agedge(graph.get(), graph_node.get(),
+                       getBody()->graph_node.get(), NULL, TRUE);
   agsafeset(b, (char *)"label", "body", (char *)"");
 }
 
@@ -170,20 +197,31 @@ FuncCallNode::FuncCallNode() {}
 
 FuncCallNode::FuncCallNode(shared_ptr<Token> const &head,
                            vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(FUNCCALL, head, children) {
-  this->name = head;
-  this->args = children;
+    : ASTNode(FUNCCALL, head, children) {}
+
+shared_ptr<Token> FuncCallNode::getName() { return head; }
+vector<shared_ptr<ASTNode>> FuncCallNode::getArgs() { return children; }
+
+void FuncCallNode::setName(shared_ptr<Token> const &name) { head = name; }
+void FuncCallNode::setArgs(vector<shared_ptr<ASTNode>> const &args) {
+  children = args;
 }
 
-void FuncCallNode::update() { this->args = children; }
+shared_ptr<ASTNode> FuncCallNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
+  }
+
+  return make_shared<FuncCallNode>(head, children_copy);
+}
 
 void FuncCallNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "print funccall " << name->value << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
-  string label = "FuncCallNode\n" + name->value;
+  string label = "FuncCallNode\n" + getName()->value;
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
 
-  for (auto arg : args) {
+  for (auto arg : getArgs()) {
     arg->print(graph);
     Agedge_t *e = agedge(graph.get(), graph_node.get(), arg->graph_node.get(),
                          NULL, TRUE);
@@ -195,31 +233,42 @@ LambdaNode::LambdaNode() {}
 
 LambdaNode::LambdaNode(shared_ptr<Token> const &head,
                        vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(LAMBDA, head, children) {
-  this->params = children[0];
-  this->body = children[1];
+    : ASTNode(LAMBDA, head, children) {}
+
+shared_ptr<ASTNode> LambdaNode::getBody() { return children[1]; }
+shared_ptr<ASTNode> LambdaNode::getParams() { return children[0]; }
+
+void LambdaNode::setBody(shared_ptr<ASTNode> const &body) {
+  children[1] = body;
 }
 
-void LambdaNode::update() {
-  this->params = children[0];
-  this->body = children[1];
+void LambdaNode::setParams(shared_ptr<ASTNode> const &params) {
+  children[0] = params;
+}
+
+shared_ptr<ASTNode> LambdaNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
+  }
+
+  return make_shared<LambdaNode>(head, children_copy);
 }
 
 void LambdaNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "print lambda" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "LambdaNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
 
-  params->print(graph);
-  body->print(graph);
+  getParams()->print(graph);
+  getBody()->print(graph);
 
-  Agedge_t *p = agedge(graph.get(), graph_node.get(), params->graph_node.get(),
-                       NULL, TRUE);
+  Agedge_t *p = agedge(graph.get(), graph_node.get(),
+                       getParams()->graph_node.get(), NULL, TRUE);
   agsafeset(p, (char *)"label", "params", (char *)"");
 
-  Agedge_t *b =
-      agedge(graph.get(), graph_node.get(), body->graph_node.get(), NULL, TRUE);
+  Agedge_t *b = agedge(graph.get(), graph_node.get(),
+                       getBody()->graph_node.get(), NULL, TRUE);
   agsafeset(b, (char *)"label", "body", (char *)"");
 }
 
@@ -235,10 +284,16 @@ ListNode::ListNode(bool is_quote, vector<shared_ptr<ASTNode>> const &children)
   this->children = children;
 }
 
-void ListNode::update() { this->children = children; }
+shared_ptr<ASTNode> ListNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
+  }
+
+  return make_shared<ListNode>(children_copy);
+}
 
 void ListNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "print list" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "ListNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -253,46 +308,57 @@ ReturnNode::ReturnNode() {}
 
 ReturnNode::ReturnNode(shared_ptr<Token> const &head,
                        vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(RETURN, head, children) {
-  this->value = children[0];
+    : ASTNode(RETURN, head, children) {}
+
+shared_ptr<ASTNode> ReturnNode::getValue() { return children[0]; }
+
+void ReturnNode::setValue(shared_ptr<ASTNode> const &value) {
+  children[0] = value;
 }
 
-void ReturnNode::update() { this->value = children[0]; }
+shared_ptr<ASTNode> ReturnNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
+  }
+
+  return make_shared<ReturnNode>(head, children_copy);
+}
 
 void ReturnNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "print return" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "ReturnNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
 
-  value->print(graph);
+  getValue()->print(graph);
 
-  Agedge_t *e = agedge(graph.get(), graph_node.get(), value->graph_node.get(),
-                       NULL, TRUE);
+  Agedge_t *e = agedge(graph.get(), graph_node.get(),
+                       getValue()->graph_node.get(), NULL, TRUE);
   agsafeset(e, (char *)"label", "value", (char *)"");
-  cout << "print return end" << endl;
 }
 
 CondNode::CondNode() {}
 
 CondNode::CondNode(shared_ptr<Token> const &head,
                    vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(COND, head, children) {
-  this->cond = children[0];
-  this->body_true = children[1];
+    : ASTNode(COND, head, children) {}
 
-  if (children.size() == 3) {
-    this->body_false = children[2];
-  }
+shared_ptr<ASTNode> CondNode::getCond() { return children[0]; }
+shared_ptr<ASTNode> CondNode::getBranchTrue() { return children[1]; }
+shared_ptr<ASTNode> CondNode::getBranchFalse() {
+  if (children.size() == 3)
+    return children[2];
+  else
+    return nullptr;
 }
 
-void CondNode::update() {
-  this->cond = children[0];
-  this->body_true = children[1];
-
-  if (children.size() == 3) {
-    this->body_false = children[2];
+shared_ptr<ASTNode> CondNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
   }
+
+  return make_shared<CondNode>(head, children_copy);
 }
 
 void CondNode::print(shared_ptr<Agraph_t> const &graph) {
@@ -300,6 +366,10 @@ void CondNode::print(shared_ptr<Agraph_t> const &graph) {
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "CondNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
+
+  shared_ptr<ASTNode> cond = getCond();
+  shared_ptr<ASTNode> body_true = getBranchTrue();
+  shared_ptr<ASTNode> body_false = getBranchFalse();
 
   cond->print(graph);
   body_true->print(graph);
@@ -323,21 +393,30 @@ WhileNode::WhileNode() {}
 
 WhileNode::WhileNode(shared_ptr<Token> const &head,
                      vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(WHILE, head, children) {
-  this->cond = children[0];
-  this->body = children[1];
-}
+    : ASTNode(WHILE, head, children) {}
 
-void WhileNode::update() {
-  this->cond = children[0];
-  this->body = children[1];
+shared_ptr<ASTNode> WhileNode::getBody() { return children[1]; }
+shared_ptr<ASTNode> WhileNode::getCond() { return children[0]; }
+
+void WhileNode::setBody(shared_ptr<ASTNode> const &body) { children[1] = body; }
+void WhileNode::setCond(shared_ptr<ASTNode> const &cond) { children[0] = cond; }
+
+shared_ptr<ASTNode> WhileNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
+  }
+
+  return make_shared<WhileNode>(head, children_copy);
 }
 
 void WhileNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "print while" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "WhileNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
+
+  shared_ptr<ASTNode> cond = getCond();
+  shared_ptr<ASTNode> body = getBody();
 
   cond->print(graph);
   body->print(graph);
@@ -354,17 +433,26 @@ ProgNode::ProgNode() {}
 
 ProgNode::ProgNode(shared_ptr<Token> const &head,
                    vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(PROG, head, children) {
-  this->locals = children[0];
-}
+    : ASTNode(PROG, head, children) {}
 
-void ProgNode::update() { this->locals = children[0]; }
+shared_ptr<ASTNode> ProgNode::getLocals() { return children[0]; }
+
+shared_ptr<ASTNode> ProgNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
+  }
+
+  return make_shared<ProgNode>(head, children_copy);
+}
 
 void ProgNode::print(shared_ptr<Agraph_t> const &graph) {
   cout << "print prog" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "ProgNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
+
+  shared_ptr<ASTNode> locals = getLocals();
 
   locals->print(graph);
 
@@ -383,45 +471,39 @@ SetqNode::SetqNode() {}
 
 SetqNode::SetqNode(shared_ptr<Token> const &head,
                    vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(SETQ, head, children) {
-  this->name = children[0]->head;
-  this->value = children[1];
+    : ASTNode(SETQ, head, children) {}
+
+shared_ptr<Token> SetqNode::getName() { return children[0]->head; }
+shared_ptr<ASTNode> SetqNode::getValue() { return children[1]; }
+
+void SetqNode::setName(shared_ptr<Token> const &name) {
+  children[0]->head = name;
 }
 
-void SetqNode::update() {
-  this->name = children[0]->head;
-  this->value = children[1];
+void SetqNode::setValue(shared_ptr<ASTNode> const &value) {
+  children[1] = value;
+}
+
+shared_ptr<ASTNode> SetqNode::copy() {
+  vector<shared_ptr<ASTNode>> children_copy;
+  for (auto child : children) {
+    children_copy.push_back(child->copy());
+  }
+
+  return make_shared<SetqNode>(head, children_copy);
 }
 
 void SetqNode::print(shared_ptr<Agraph_t> const &graph) {
   cout << "print setq" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
-  string label = "SetqNode\n" + name->value;
+  string label = "SetqNode\n" + getName()->value;
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
 
-  value->print(graph);
+  getValue()->print(graph);
 
-  Agedge_t *e = agedge(graph.get(), graph_node.get(), value->graph_node.get(),
-                       NULL, TRUE);
+  Agedge_t *e = agedge(graph.get(), graph_node.get(),
+                       getValue()->graph_node.get(), NULL, TRUE);
   agsafeset(e, (char *)"label", "value", (char *)"");
-}
-
-bool flang::calculable(vector<shared_ptr<ASTNode>> const &args) {
-
-  for (auto arg : args) {
-    if (arg->node_type == LEAF && arg->head->type != NUL &&
-        arg->head->type != IDENTIFIER) {
-      continue;
-    } else
-      return false;
-  }
-
-  return true;
-}
-
-bool flang::calculable(const shared_ptr<ASTNode> &node) {
-  return node->node_type == LEAF && node->head->type != NUL &&
-         node->head->type != IDENTIFIER;
 }
 
 shared_ptr<Token> flang::calculate(vector<shared_ptr<ASTNode>> const &args,

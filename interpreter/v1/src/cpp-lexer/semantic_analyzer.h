@@ -2,8 +2,9 @@
 #include <map>
 #include <memory>
 
-using namespace std;
 using namespace flang;
+using std::make_shared, std::map, std::shared_ptr, std::string, std::to_string,
+    std::vector;
 
 struct Var {
   shared_ptr<ASTNode> value;
@@ -36,7 +37,6 @@ public:
 
 private:
   vector<Scope> scope_stack;
-  map<string, shared_ptr<FuncDefNode>> functions;
   const vector<string> PF_FUNCTIONS = {
       "plus",    "minus",  "times",   "divide",    "equal",  "nonequal",
       "less",    "lesseq", "greater", "greatereq", "and",    "or",
@@ -60,17 +60,16 @@ private:
   Var find_variable(shared_ptr<Token> identifier);
   shared_ptr<ASTNode> remove_variable(shared_ptr<ASTNode> node, Scope &scope,
                                       string const &identifier);
-  shared_ptr<ASTNode> find_function(shared_ptr<Token> identifier);
+  shared_ptr<ASTNode> remove_inlined_function(shared_ptr<ASTNode> node,
+                                              Scope &scope,
+                                              string const &identifier);
+  shared_ptr<FuncDefNode> find_function(shared_ptr<Token> identifier);
 
   shared_ptr<ASTNode>
-  get_inlined_function(string const &identifier,
+  get_inlined_function(shared_ptr<Token> const &identifier,
                        vector<shared_ptr<ASTNode>> const &args);
   shared_ptr<ASTNode> inline_function(shared_ptr<ASTNode> node,
                                       map<string, string> const &args);
-
-  shared_ptr<ASTNode> deep_copy(shared_ptr<ASTNode> node);
-  shared_ptr<ASTNode> copy_node(shared_ptr<ASTNode> node,
-                                vector<shared_ptr<ASTNode>> const &children);
 };
 
 class RuntimeError : public exception {

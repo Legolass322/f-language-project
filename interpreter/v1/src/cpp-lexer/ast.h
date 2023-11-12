@@ -64,16 +64,22 @@ public:
   ASTNode(ASTNodeType node_type, shared_ptr<Token> const &head,
           vector<shared_ptr<ASTNode>> const &children);
 
+  bool calculable();
+
   virtual ~ASTNode();
   virtual void print(shared_ptr<Agraph_t> const &graph);
-  virtual void update();
+  virtual shared_ptr<ASTNode> copy();
 };
 
 class FuncDefNode : public ASTNode {
 public:
-  shared_ptr<Token> name;
-  shared_ptr<ASTNode> body;
-  shared_ptr<ASTNode> params;
+  shared_ptr<Token> getName();
+  shared_ptr<ASTNode> getBody();
+  shared_ptr<ASTNode> getParams();
+
+  void setBody(shared_ptr<ASTNode> const &body);
+  void setParams(shared_ptr<ASTNode> const &params);
+  void setName(shared_ptr<Token> const &name);
 
   FuncDefNode();
 
@@ -81,13 +87,16 @@ public:
               vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
-  void update() override;
+  shared_ptr<ASTNode> copy() override;
 };
 
 class FuncCallNode : public ASTNode {
 public:
-  shared_ptr<Token> name;
-  vector<shared_ptr<ASTNode>> args;
+  shared_ptr<Token> getName();
+  vector<shared_ptr<ASTNode>> getArgs();
+
+  void setArgs(vector<shared_ptr<ASTNode>> const &args);
+  void setName(shared_ptr<Token> const &name);
 
   FuncCallNode();
 
@@ -95,13 +104,16 @@ public:
                vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
-  void update() override;
+  shared_ptr<ASTNode> copy() override;
 };
 
 class LambdaNode : public ASTNode {
 public:
-  shared_ptr<ASTNode> body;
-  shared_ptr<ASTNode> params;
+  shared_ptr<ASTNode> getBody();
+  shared_ptr<ASTNode> getParams();
+
+  void setBody(shared_ptr<ASTNode> const &body);
+  void setParams(shared_ptr<ASTNode> const &params);
 
   LambdaNode();
 
@@ -109,7 +121,7 @@ public:
              vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
-  void update() override;
+  shared_ptr<ASTNode> copy() override;
 };
 
 class ListNode : public ASTNode {
@@ -119,75 +131,86 @@ public:
   ListNode(bool is_quote, vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
-  void update() override;
+  shared_ptr<ASTNode> copy() override;
 };
 
 class ReturnNode : public ASTNode {
 public:
-  shared_ptr<ASTNode> value;
+  shared_ptr<ASTNode> getValue();
+
+  void setValue(shared_ptr<ASTNode> const &value);
 
   ReturnNode();
   ReturnNode(shared_ptr<Token> const &head,
              vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
-  void update() override;
+  shared_ptr<ASTNode> copy() override;
 };
 
 class CondNode : public ASTNode {
 public:
-  shared_ptr<ASTNode> cond;
-  shared_ptr<ASTNode> body_true;
-  shared_ptr<ASTNode> body_false;
+  shared_ptr<ASTNode> getCond();
+  shared_ptr<ASTNode> getBranchTrue();
+  shared_ptr<ASTNode> getBranchFalse();
+
+  void setCond(shared_ptr<ASTNode> const &cond);
+  void setBranchTrue(shared_ptr<ASTNode> const &branch_true);
+  void setBranchFalse(shared_ptr<ASTNode> const &branch_false);
 
   CondNode();
   CondNode(shared_ptr<Token> const &head,
            vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
-  void update() override;
+  shared_ptr<ASTNode> copy() override;
 };
 
 class WhileNode : public ASTNode {
 public:
-  shared_ptr<ASTNode> body;
-  shared_ptr<ASTNode> cond;
+  shared_ptr<ASTNode> getBody();
+  shared_ptr<ASTNode> getCond();
+
+  void setBody(shared_ptr<ASTNode> const &body);
+  void setCond(shared_ptr<ASTNode> const &cond);
 
   WhileNode();
   WhileNode(shared_ptr<Token> const &head,
             vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
-  void update() override;
+  shared_ptr<ASTNode> copy() override;
 };
 
 class ProgNode : public ASTNode {
 public:
-  shared_ptr<ASTNode> locals;
+  shared_ptr<ASTNode> getLocals();
+
+  void setLocals(shared_ptr<ASTNode> const &locals);
 
   ProgNode();
   ProgNode(shared_ptr<Token> const &head,
            vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
-  void update() override;
+  shared_ptr<ASTNode> copy() override;
 };
 
 class SetqNode : public ASTNode {
 public:
-  shared_ptr<ASTNode> value;
-  shared_ptr<Token> name;
+  shared_ptr<ASTNode> getValue();
+  shared_ptr<Token> getName();
+
+  void setValue(shared_ptr<ASTNode> const &value);
+  void setName(shared_ptr<Token> const &name);
 
   SetqNode();
   SetqNode(shared_ptr<Token> const &head,
            vector<shared_ptr<ASTNode>> const &children);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
-  void update() override;
+  shared_ptr<ASTNode> copy() override;
 };
-
-bool calculable(vector<shared_ptr<ASTNode>> const &args);
-bool calculable(shared_ptr<ASTNode> const &node);
 
 shared_ptr<Token> calculate(vector<shared_ptr<ASTNode>> const &args,
                             string const &op);
