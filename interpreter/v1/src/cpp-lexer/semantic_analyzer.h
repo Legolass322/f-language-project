@@ -22,10 +22,10 @@ struct Var {
 
 struct Scope {
   map<string, Var> variables;
-  ASTNodeType scope_type;
+  shared_ptr<ASTNode> scope_node;
 
-  Scope(map<string, Var> variables, ASTNodeType scope_type)
-      : variables(variables), scope_type(scope_type) {}
+  Scope(shared_ptr<ASTNode> scope_node)
+      : variables(map<string, Var>()), scope_node(scope_node) {}
 };
 
 class SemanticAnalyzer {
@@ -58,11 +58,13 @@ private:
   shared_ptr<ASTNode> calculate_node(shared_ptr<ASTNode> node);
 
   Var find_variable(shared_ptr<Token> identifier);
+
   shared_ptr<ASTNode> remove_variable(shared_ptr<ASTNode> node, Scope &scope,
                                       string const &identifier);
   shared_ptr<ASTNode> remove_inlined_function(shared_ptr<ASTNode> node,
                                               Scope &scope,
                                               string const &identifier);
+
   shared_ptr<FuncDefNode> find_function(shared_ptr<Token> identifier);
 
   shared_ptr<ASTNode>
