@@ -77,6 +77,8 @@ null {return yy::parser::make_NULL(yytext, loc);}
 
 [a-zA-Z][a-zA-Z0-9]* {return yy::parser::make_IDENTIFIER(yytext, loc);}
 
+;.+\n {}
+
 [ ] {loc.step();}
 [\t] {loc.step();}
 [\n] {loc.lines(yyleng); loc.step(); }
