@@ -46,6 +46,7 @@
 %token <std::string> NULL
 %token <std::string> SYM_LPAREN "(" 
 %token <std::string> SYM_RPAREN ")" 
+%token <std::string> SYM_QUOTE "'"
 
 %left SYM_LPAREN SYM_RPAREN
 %left PF_PLUS PF_TIMES PF_DIVIDE PF_MINUS
@@ -161,6 +162,10 @@ lambda_def:
 
 quote_def:
     "(" SF_QUOTE elements ")"
+    {
+      $$ = std::make_shared<ListNode>(true, $3); 
+    }
+    | SYM_QUOTE "(" elements ")"
     {
       $$ = std::make_shared<ListNode>(true, $3); 
     }
