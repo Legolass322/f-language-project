@@ -42,7 +42,7 @@ private:
       "less",    "lesseq", "greater", "greatereq", "and",    "or",
       "not",     "xor",    "eval",    "isint",     "isreal", "isbool",
       "isnull",  "isatom", "islist",  "head",      "tail",   "cons",
-      "isempty", "foldl"};
+      "isempty", "foldl",  "println"};
 
   shared_ptr<ASTNode> analyze_funcdef(shared_ptr<FuncDefNode> node);
   shared_ptr<ASTNode> analyze_funccall(shared_ptr<FuncCallNode> node);

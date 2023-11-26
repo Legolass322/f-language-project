@@ -486,8 +486,13 @@ shared_ptr<ASTNode> SemanticAnalyzer::calculate_node(shared_ptr<ASTNode> node) {
   } else if (args.size() == 0) { // no arguments are calculable
     return make_shared<FuncCallNode>(node->head, left);
   } else { // calculate calculable arguments and create new function call node
-    left.push_back(
-        make_shared<ASTNode>(LEAF, calculate(args, node->head->value)));
+    if (node->children[0]->calculable()) {
+      left.insert(left.begin(), make_shared<ASTNode>(
+                                    LEAF, calculate(args, node->head->value)));
+    } else {
+      left.push_back(
+          make_shared<ASTNode>(LEAF, calculate(args, node->head->value)));
+    }
     return make_shared<FuncCallNode>(node->head, left);
   }
 }
