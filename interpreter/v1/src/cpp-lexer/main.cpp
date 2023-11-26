@@ -1,8 +1,11 @@
 #include "ast.h"
 #include "driver.hh"
+#include "interpeter.h"
 #include "semantic_analyzer.h"
 #include <graphviz/gvc.h>
 #include <iostream>
+
+using interp::Interpreter;
 
 void generate_graph_svg(std::shared_ptr<flang::ASTNode> const &ast) {
   GVC_t *gvc = gvContext();
@@ -25,6 +28,7 @@ int main(int argc, char *argv[]) {
   int res = 0;
   Driver drv;
   SemanticAnalyzer semantic_analyzer;
+  Interpreter interpreter;
 
   for (int i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-p"))
@@ -37,6 +41,8 @@ int main(int argc, char *argv[]) {
       std::cout << "Semantic analysis successful" << '\n';
       generate_graph_svg(drv.ast);
       std::cout << "Graphviz file generated" << '\n';
+      interpreter.interpret(drv.ast);
+      std::cout << '\n';
       std::cout << "Done" << '\n';
     } else
       res = 1;
