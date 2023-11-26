@@ -86,7 +86,6 @@ shared_ptr<ASTNode> Interpreter::interpret(shared_ptr<ASTNode> const &node) {
     interpret_setq(static_pointer_cast<SetqNode>(node));
     break;
   case ASTNodeType::LEAF:
-    cout << "found leaf: " << node->head->value << '\n';
     return interpret_leaf(node);
   }
 
@@ -116,10 +115,7 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
   auto const &name = node->getName()->value;
   auto const &args = node->getArgs();
 
-  cout << "calling function " << name << '\n';
-
   if (find(PF_FUNCS.begin(), PF_FUNCS.end(), name) != PF_FUNCS.end()) {
-    cout << "calling pf func" << '\n';
     vector<shared_ptr<ASTNode>> v_args;
     for (auto const &arg : args) {
       v_args.push_back(interpret(arg));
@@ -127,17 +123,26 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
     return PF_FUNC_MAP.at(name)(v_args);
   }
 
-  auto const &params = node->node_type == ASTNodeType::FUNCCALL
-                           ? stack.back()[name]->children[1]
-                           : stack.back()[name]->children[0];
-  auto const &body = node->node_type == ASTNodeType::FUNCCALL
-                         ? stack.back()[name]->children[2]
-                         : stack.back()[name]->children[1];
+  shared_ptr<ASTNode> funcdef;
+
+  for (int i = stack.size() - 1; i >= 0; i--) {
+    if (stack[i].variables.find(name) != stack[i].variables.end()) {
+      funcdef = stack[i][name];
+      break;
+    }
+  }
+
+  auto const &params = funcdef->node_type == ASTNodeType::FUNCDEF
+                           ? funcdef->children[1]
+                           : funcdef->children[0];
+  auto const &body = funcdef->node_type == ASTNodeType::FUNCDEF
+                         ? funcdef->children[2]
+                         : funcdef->children[1];
 
   stack.push_back(Scope(ASTNodeType::FUNCCALL));
 
   for (int i = 0; i < params->children.size(); i++) {
-    stack.back()[params->children[i]->head->value] = args[i];
+    stack.back()[params->children[i]->head->value] = interpret(args[i]);
   }
 
   shared_ptr<ASTNode> res = interpret(body);
@@ -151,11 +156,6 @@ void Interpreter::interpret_setq(shared_ptr<SetqNode> const &node) {
   auto const &name = node->getName()->value;
   auto const &value = node->getValue();
 
-  cout << "setting variable " << name << "with value " << value->head->value
-       << '\n';
-
-  cout << "var size: " << stack.back().variables.size() << '\n';
-
   for (int i = stack.size() - 1; i >= 0; i--) {
     if (stack[i].variables.find(name) != stack[i].variables.end()) {
       stack[i][name] = interpret(value);
@@ -164,8 +164,6 @@ void Interpreter::interpret_setq(shared_ptr<SetqNode> const &node) {
   }
 
   stack.back()[name] = interpret(value);
-
-  cout << "var size: " << stack.back().variables.size() << '\n';
 }
 
 void Interpreter::interpret_break(shared_ptr<ASTNode> const &node) {
@@ -227,6 +225,10 @@ shared_ptr<ASTNode>
 Interpreter::interpret_prog(shared_ptr<ProgNode> const &node) {
   stack.push_back(Scope(ASTNodeType::PROG));
 
+  for (auto &loc : node->getLocals()->children) {
+    stack.back()[loc->head->value] = nullptr;
+  }
+
   for (int i = 1; i < node->children.size() - 1; i++) {
     if (stack.back().return_value) {
       auto res = stack.back().return_value;
@@ -245,13 +247,11 @@ Interpreter::interpret_prog(shared_ptr<ProgNode> const &node) {
 
   // return last statement result in case of no return statement
   if (!stack.back().return_value) {
-    cout << "no return statement" << '\n';
     auto res = interpret(node->children.back());
 
     if (stack.back().break_flag) {
       stack.pop_back();
       stack.back().break_flag = true;
-      cout << "encountered break in last stmt" << '\n';
       return nullptr;
     }
 
@@ -267,17 +267,14 @@ Interpreter::interpret_prog(shared_ptr<ProgNode> const &node) {
 
 shared_ptr<ASTNode>
 Interpreter::interpret_leaf(shared_ptr<ASTNode> const &node) {
-  cout << "interpreting leaf" << '\n';
   if (node->head->type == TokenType::IDENTIFIER) {
     for (int i = stack.size() - 1; i >= 0; i--) {
       if (stack[i].variables.find(node->head->value) !=
           stack[i].variables.end()) {
-        cout << "returning variable" << '\n';
         return stack[i][node->head->value];
       }
     }
   }
 
-  cout << "returning node" << '\n';
   return node;
 }

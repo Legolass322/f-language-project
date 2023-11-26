@@ -37,12 +37,13 @@ public:
 
 private:
   vector<Scope> scope_stack;
+  int tmp_counter;
   const vector<string> PF_FUNCTIONS = {
       "plus",    "minus",  "times",   "divide",    "equal",  "nonequal",
       "less",    "lesseq", "greater", "greatereq", "and",    "or",
       "not",     "xor",    "eval",    "isint",     "isreal", "isbool",
       "isnull",  "isatom", "islist",  "head",      "tail",   "cons",
-      "isempty", "foldl",  "println"};
+      "isempty", "println"};
 
   shared_ptr<ASTNode> analyze_funcdef(shared_ptr<FuncDefNode> node);
   shared_ptr<ASTNode> analyze_funccall(shared_ptr<FuncCallNode> node);
@@ -65,13 +66,18 @@ private:
                                               Scope &scope,
                                               string const &identifier);
 
-  shared_ptr<FuncDefNode> find_function(shared_ptr<Token> identifier);
+  shared_ptr<ASTNode> find_function(shared_ptr<Token> identifier);
 
   shared_ptr<ASTNode>
   get_inlined_function(shared_ptr<Token> const &identifier,
                        vector<shared_ptr<ASTNode>> const &args);
-  shared_ptr<ASTNode> inline_function(shared_ptr<ASTNode> node,
-                                      map<string, string> const &args);
+  shared_ptr<ASTNode>
+  inline_function(shared_ptr<ASTNode> node, map<string, string> const &tmps,
+                  map<string, shared_ptr<ASTNode>> const &params_to_args);
+
+  shared_ptr<ASTNode>
+  get_inlined_lambda(shared_ptr<LambdaNode> const &lambda,
+                     vector<shared_ptr<ASTNode>> const &args);
 };
 
 class RuntimeError : public exception {
