@@ -10,15 +10,7 @@ using namespace std;
 
 namespace flang {
 
-enum TokenType {
-  LITERAL,
-  INT,
-  REAL,
-  BOOL,
-  NUL,
-  IDENTIFIER,
-  KEYWORD,
-};
+enum TokenType { LITERAL, INT, REAL, BOOL, NUL, IDENTIFIER, KEYWORD, CHAR };
 
 struct Span {
   int line;

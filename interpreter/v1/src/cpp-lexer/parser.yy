@@ -53,7 +53,7 @@
 
 %type <std::shared_ptr<FuncDefNode>> func_def
 %type <std::shared_ptr<LambdaNode>> lambda_def
-%type <std::shared_ptr<ListNode>> quote_def
+%type <std::shared_ptr<ASTNode>> quote_def
 %type <std::shared_ptr<ReturnNode>> return_def
 %type <std::shared_ptr<ASTNode>> break_def
 %type <std::shared_ptr<WhileNode>> while_def
@@ -175,6 +175,11 @@ quote_def:
     | SYM_QUOTE "(" elements ")"
     {
       $$ = std::make_shared<ListNode>(true, $3); 
+    }
+    | SYM_QUOTE atom
+    {
+      std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::CHAR, $2->value, Span({@1.begin.line, @1.begin.column}));
+      $$ = std::make_shared<ASTNode>(ASTNodeType::LEAF, t);
     }
 
 return_def:
