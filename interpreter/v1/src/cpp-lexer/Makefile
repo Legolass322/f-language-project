@@ -1,4 +1,4 @@
 all:
 	bison -d parser.yy
 	flex -o scanner.cpp scanner.l
-	g++ -o cpp_lexer main.cpp interpreter.cpp pf_funcs.cpp semantic_analyzer.cpp scanner.cpp parser.tab.cc driver.cc ast.cpp -ly -ll -lgvc -lcgraph -lcdt -I/usr/include/graphviz
+	g++ -o flang_repl main.cpp interpreter.cpp pf_funcs.cpp semantic_analyzer.cpp scanner.cpp parser.tab.cc driver.cc ast.cpp -ly -ll -lgvc -lcgraph -lcdt -I/usr/include/graphviz

@@ -4,7 +4,11 @@
 #include <iostream>
 #include <memory>
 
+// #define DEBUG
+
+#ifdef DEBUG
 using std::cout, std::endl;
+#endif
 
 SemanticAnalyzer::SemanticAnalyzer() { tmp_counter = 0; }
 
@@ -33,8 +37,9 @@ Var SemanticAnalyzer::find_variable(shared_ptr<Token> identifier) {
   if (find(PF_FUNCTIONS.begin(), PF_FUNCTIONS.end(), identifier_str) !=
       PF_FUNCTIONS.end())
     return Var(make_shared<ASTNode>(LEAF, identifier));
-
+#ifdef DEBUG
   cout << "error in find " << identifier_str << endl;
+#endif
   throw VariableNotFoundError(identifier->span, identifier_str);
 }
 
@@ -55,7 +60,9 @@ SemanticAnalyzer::remove_variable(shared_ptr<ASTNode> node, Scope &scope,
     }
   }
 
+#ifdef DEBUG
   cout << "error in remove var" << identifier << endl;
+#endif
   throw VariableNotFoundError(node->head->span, identifier);
 }
 
@@ -68,6 +75,9 @@ shared_ptr<ASTNode> SemanticAnalyzer::remove_inlined_function(
       if (node->children[i]->node_type == FUNCDEF) {
         auto funcdef_node = static_pointer_cast<FuncDefNode>(node->children[i]);
         if (funcdef_node->getName()->value == identifier) {
+          if (funcdef_node->is_recursive)
+            return node;
+
           node->children.erase(node->children.begin() + i);
           return node;
         }
@@ -75,7 +85,10 @@ shared_ptr<ASTNode> SemanticAnalyzer::remove_inlined_function(
     }
   }
 
+#ifdef DEBUG
   cout << "error in remove func" << identifier << endl;
+#endif
+
   throw VariableNotFoundError(node->head->span, identifier);
 }
 
@@ -88,20 +101,27 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
   vector<shared_ptr<ASTNode>> params = func_copy->getParams()->children;
   map<string, string> tmps;
   map<string, shared_ptr<ASTNode>> params_to_args;
+  vector<shared_ptr<ASTNode>> add_to_body_locals;
 
   // check if number of arguments match number of parameters
   if (args.size() != params.size())
     throw WrongNumberOfArgumentsError(func_copy->head->span, identifier->value,
                                       params.size(), args.size());
 
+#ifdef DEBUG
   cout << "get_inlined_function" << endl;
+#endif
 
   // check for recursive calls
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
     if (it->scope_node->node_type == FUNCDEF) {
       auto funcdef_node = static_pointer_cast<FuncDefNode>(it->scope_node);
       if (funcdef_node->getName()->value == identifier->value) {
+        funcdef_node->is_recursive = true;
+
+#ifdef DEBUG
         cout << "recursive call found" << endl;
+#endif
         return make_shared<FuncCallNode>(identifier, args);
       }
     }
@@ -118,6 +138,11 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
 
   for (auto &child : node_body->children) {
     child = inline_function(child, tmps, params_to_args);
+    if (child->node_type == SETQ) {
+      auto setq_node = static_pointer_cast<SetqNode>(child);
+      add_to_body_locals.push_back(
+          make_shared<ASTNode>(LEAF, setq_node->getName()));
+    }
   }
 
   // create setq nodes for each parameter
@@ -147,6 +172,10 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
     body_children.push_back(setq);
   }
 
+  if (add_to_body_locals.size() > 0 && node_body->node_type == PROG) {
+    node_body->children[0] = make_shared<ListNode>(add_to_body_locals);
+  }
+
   body_children.push_back(node_body);
 
   return make_shared<ProgNode>(node_body->head, body_children);
@@ -155,14 +184,20 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
 shared_ptr<ASTNode> SemanticAnalyzer::inline_function(
     shared_ptr<ASTNode> node, map<string, string> const &tmps,
     map<string, shared_ptr<ASTNode>> const &params_to_args) {
+
+#ifdef DEBUG
   cout << "inline_function" << endl;
+#endif
 
   if (node->node_type == LEAF) {
     if (node->head->type == IDENTIFIER) {
       auto tmp = tmps.find(node->head->value);
       if (tmp != tmps.end()) {
+
+#ifdef DEBUG
         cout << "replacing " << node->head->value << " with " << tmp->second
              << endl;
+#endif
         return make_shared<ASTNode>(
             LEAF,
             make_shared<Token>(IDENTIFIER, tmp->second, node->head->span));
@@ -172,8 +207,10 @@ shared_ptr<ASTNode> SemanticAnalyzer::inline_function(
     auto func_call = static_pointer_cast<FuncCallNode>(node);
     auto arg = params_to_args.find(func_call->getName()->value);
     if (arg != params_to_args.end()) {
+#ifdef DEBUG
       cout << "replacing " << func_call->getName()->value << " with "
            << arg->second->head->value << endl;
+#endif
 
       if (arg->second->node_type == LEAF &&
           arg->second->head->type == IDENTIFIER) {
@@ -267,7 +304,9 @@ SemanticAnalyzer::find_function(shared_ptr<Token> identifier) {
 }
 
 shared_ptr<ASTNode> SemanticAnalyzer::analyze_node(shared_ptr<ASTNode> node) {
+#ifdef DEBUG
   cout << "analyze_node " << node->head->value << endl;
+#endif
   switch (node->node_type) {
   case FUNCDEF:
     return analyze_funcdef(static_pointer_cast<FuncDefNode>(node));
@@ -294,7 +333,9 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_node(shared_ptr<ASTNode> node) {
   }
 
   if (node->head != nullptr && node->head->type == IDENTIFIER) {
+#ifdef DEBUG
     cout << "analyze_node " << node->head->value << endl;
+#endif
     find_variable(node->head);
     return node;
   }
@@ -310,7 +351,9 @@ shared_ptr<ASTNode>
 SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
   string identifier = node->getName()->value;
 
+#ifdef DEBUG
   cout << "analyze_funcdef " << identifier << endl;
+#endif
 
   try {
     find_function(node->getName());
@@ -319,7 +362,9 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
     // Function not found, add it to the list of functions
   }
 
+#ifdef DEBUG
   cout << "adding function " << identifier << endl;
+#endif
   scope_stack.back().variables[identifier] = node;
 
   // create new scope for function
@@ -335,7 +380,9 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
     if (variable != scope.variables.end())
       throw VariableAlreadyDefinedError(node->head->span, identifier);
 
+#ifdef DEBUG
     cout << "adding variable " << identifier << endl;
+#endif
     scope.variables[identifier] = child;
   }
 
@@ -345,16 +392,32 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
   for (auto it = scope_stack.back().variables.rbegin();
        it != scope_stack.back().variables.rend(); ++it) {
     if (it->second.referrers == 0) {
+#ifdef DEBUG
       cout << "removing variable " << it->first << endl;
-      node = static_pointer_cast<FuncDefNode>(
-          remove_variable(node, scope_stack.back(), it->first));
+#endif
+
+      bool is_defined = false;
+
+      try {
+        find_variable(
+            make_shared<Token>(IDENTIFIER, it->first, node->head->span));
+        is_defined = true;
+      } catch (VariableNotFoundError &e) {
+        // Variable not found, add it to the current scope
+      }
+
+      if (!is_defined)
+        node = static_pointer_cast<FuncDefNode>(
+            remove_variable(node, scope_stack.back(), it->first));
     }
   }
 
   scope_stack.pop_back();
 
   // Update function in functions map
+#ifdef DEBUG
   cout << "updating function " << identifier << endl;
+#endif
   scope_stack.back().variables[identifier] = node;
 
   return node;
@@ -365,7 +428,9 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
   string identifier = node->getName()->value;
   Scope &scope = scope_stack.back();
 
+#ifdef DEBUG
   cout << "analyze_funccall " << identifier << endl;
+#endif
 
   try {
     shared_ptr<ASTNode> func_node = find_function(node->getName());
@@ -402,7 +467,9 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
 
 shared_ptr<ASTNode>
 SemanticAnalyzer::analyze_lambda(shared_ptr<LambdaNode> node) {
+#ifdef DEBUG
   cout << "analyze_lambda" << endl;
+#endif
   Scope &scope = scope_stack.back();
 
   // create new scope for function
@@ -418,7 +485,9 @@ SemanticAnalyzer::analyze_lambda(shared_ptr<LambdaNode> node) {
     if (variable != scope.variables.end())
       throw VariableAlreadyDefinedError(node->head->span, identifier);
 
+#ifdef DEBUG
     cout << "adding variable " << identifier << endl;
+#endif
     scope.variables[identifier] = child;
   }
 
@@ -428,9 +497,22 @@ SemanticAnalyzer::analyze_lambda(shared_ptr<LambdaNode> node) {
   for (auto it = scope_stack.back().variables.rbegin();
        it != scope_stack.back().variables.rend(); ++it) {
     if (it->second.referrers == 0) {
+#ifdef DEBUG
       cout << "removing variable " << it->first << endl;
-      node = static_pointer_cast<LambdaNode>(
-          remove_variable(node, scope_stack.back(), it->first));
+#endif
+      bool is_defined = false;
+
+      try {
+        find_variable(
+            make_shared<Token>(IDENTIFIER, it->first, node->head->span));
+        is_defined = true;
+      } catch (VariableNotFoundError &e) {
+        // Variable not found, add it to the current scope
+      }
+
+      if (!is_defined)
+        node = static_pointer_cast<LambdaNode>(
+            remove_variable(node, scope_stack.back(), it->first));
     }
   }
 
@@ -439,7 +521,9 @@ SemanticAnalyzer::analyze_lambda(shared_ptr<LambdaNode> node) {
 }
 
 shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
+#ifdef DEBUG
   cout << "analyze_prog" << endl;
+#endif
   scope_stack.push_back(Scope(node));
 
   for (auto &local : node->getLocals()->children) {
@@ -451,7 +535,9 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
     if (variable != scope.variables.end())
       throw VariableAlreadyDefinedError(node->head->span, identifier);
 
+#ifdef DEBUG
     cout << "adding variable " << identifier << endl;
+#endif
     scope.variables[identifier] = local;
   }
 
@@ -464,11 +550,26 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
   for (auto it = scope_stack.back().variables.rbegin();
        it != scope_stack.back().variables.rend(); ++it) {
     if (it->second.referrers == 0) {
+#ifdef DEBUG
       cout << "removing variable " << it->first << endl;
-      node = static_pointer_cast<ProgNode>(
-          remove_variable(node, scope_stack.back(), it->first));
+#endif
+      bool is_defined = false;
+
+      try {
+        find_variable(
+            make_shared<Token>(IDENTIFIER, it->first, node->head->span));
+        is_defined = true;
+      } catch (VariableNotFoundError &e) {
+        // Variable not found, add it to the current scope
+      }
+
+      if (!is_defined)
+        node = static_pointer_cast<ProgNode>(
+            remove_variable(node, scope_stack.back(), it->first));
     } else if (it->second.value->node_type == FUNCDEF) {
+#ifdef DEBUG
       cout << "removing function " << it->first << endl;
+#endif
       node = static_pointer_cast<ProgNode>(
           remove_inlined_function(node, scope_stack.back(), it->first));
     }
@@ -479,7 +580,9 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
 }
 
 shared_ptr<ASTNode> SemanticAnalyzer::analyze_setq(shared_ptr<SetqNode> node) {
+#ifdef DEBUG
   cout << "analyze_setq" << endl;
+#endif
   string identifier = node->getName()->value;
   Scope &scope = scope_stack.back();
 
@@ -489,7 +592,9 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_setq(shared_ptr<SetqNode> node) {
     // Variable not found, add it to the current scope
   }
 
+#ifdef DEBUG
   cout << "successfully added variable " << identifier << endl;
+#endif
   scope.variables[identifier] = node;
 
   node->setValue(analyze_node(node->getValue()));
@@ -498,7 +603,9 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_setq(shared_ptr<SetqNode> node) {
 
 shared_ptr<ASTNode>
 SemanticAnalyzer::analyze_return(shared_ptr<ReturnNode> node) {
+#ifdef DEBUG
   cout << "analyze_return" << endl;
+#endif
 
   node->setValue(analyze_node(node->getValue()));
 
@@ -520,7 +627,9 @@ SemanticAnalyzer::analyze_return(shared_ptr<ReturnNode> node) {
 }
 
 shared_ptr<ASTNode> SemanticAnalyzer::analyze_break(shared_ptr<ASTNode> node) {
+#ifdef DEBUG
   cout << "analyze_break" << endl;
+#endif
   // check if break is allowed in current scope
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
     switch (it->scope_node->node_type) {
@@ -537,7 +646,9 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_break(shared_ptr<ASTNode> node) {
 shared_ptr<ASTNode>
 SemanticAnalyzer::analyze_while(shared_ptr<WhileNode> node) {
 
+#ifdef DEBUG
   cout << "analyze_while" << endl;
+#endif
   scope_stack.push_back(Scope(node));
 
   node->setCond(analyze_node(node->getCond()));
@@ -548,7 +659,9 @@ SemanticAnalyzer::analyze_while(shared_ptr<WhileNode> node) {
 }
 
 shared_ptr<ASTNode> SemanticAnalyzer::analyze_cond(shared_ptr<CondNode> node) {
+#ifdef DEBUG
   cout << "analyze_cond" << endl;
+#endif
   for (auto &child : node->children) {
     child = analyze_node(child);
   }
@@ -557,7 +670,9 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_cond(shared_ptr<CondNode> node) {
 }
 
 shared_ptr<ASTNode> SemanticAnalyzer::calculate_node(shared_ptr<ASTNode> node) {
+#ifdef DEBUG
   cout << "calculate_node" << endl;
+#endif
   for (auto &child : node->children) {
     child = analyze_node(child);
   }

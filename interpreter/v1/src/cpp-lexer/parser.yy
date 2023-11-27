@@ -83,8 +83,15 @@
 %type <std::shared_ptr<FuncCallNode>> head_def
 %type <std::shared_ptr<FuncCallNode>> tail_def
 %type <std::shared_ptr<FuncCallNode>> cons_def
+
 %type <std::shared_ptr<FuncCallNode>> not_def
+%type <std::shared_ptr<FuncCallNode>> and_def
+%type <std::shared_ptr<FuncCallNode>> or_def
+%type <std::shared_ptr<FuncCallNode>> xor_def
+
 %type <std::shared_ptr<FuncCallNode>> func_call
+
+%type <std::shared_ptr<FuncCallNode>> eval_def
 
 %type <std::shared_ptr<ASTNode>> program
 %type <std::shared_ptr<ASTNode>> element
@@ -132,7 +139,7 @@ element:
         $$ = std::make_shared<ASTNode>(ASTNodeType::LEAF, $1);
       }
     | stmt { $$ = $1;}
-    | "(" ")" { $$ = std::make_shared<ListNode>(vector<shared_ptr<ASTNode>>());}
+    | "(" ")" { $$ = std::make_shared<ListNode>(true, vector<shared_ptr<ASTNode>>());}
 
 func_def:
     "(" SF_FUNC IDENTIFIER list stmt ")"
@@ -482,6 +489,42 @@ islist_def:
       $$ = std::make_shared<FuncCallNode>(t, children);
     }
 
+eval_def:
+    "(" PF_EVAL element ")"
+    {
+      std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"eval", Span({@2.begin.line, @2.begin.column}));
+
+      std::vector<std::shared_ptr<ASTNode>> children = {
+        $3
+      };
+
+      $$ = std::make_shared<FuncCallNode>(t, children);
+    }
+
+and_def:
+    "(" PF_AND elements ")"
+    {
+      std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"and", Span({@2.begin.line, @2.begin.column}));
+
+      $$ = std::make_shared<FuncCallNode>(t, $3);
+    }
+
+or_def:
+    "(" PF_OR elements ")"
+    {
+      std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"or", Span({@2.begin.line, @2.begin.column}));
+
+      $$ = std::make_shared<FuncCallNode>(t, $3);
+    }
+
+xor_def:
+    "(" PF_XOR elements ")"
+    {
+      std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"xor", Span({@2.begin.line, @2.begin.column}));
+
+      $$ = std::make_shared<FuncCallNode>(t, $3);
+    }
+
 
 list:
   "(" elements ")" { $$ = std::make_shared<ListNode>($2); }
@@ -517,6 +560,10 @@ stmt:
   | isnull_def {$$ = $1;}
   | isatom_def {$$ = $1;}
   | islist_def {$$ = $1;}
+  | eval_def {$$ = $1;}
+  | and_def {$$ = $1;}
+  | or_def {$$ = $1;}
+  | xor_def {$$ = $1;}
   ;
 
 atom:

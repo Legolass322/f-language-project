@@ -11,7 +11,7 @@ shared_ptr<ASTNode> pf_plus(vector<shared_ptr<ASTNode>> &args) {
       result += stod(arg->head->value);
     else
       throw RuntimeError(arg->head->span,
-                         "invalid argument type " + arg->head->value);
+                         "plus: invalid argument type " + arg->head->value);
   }
 
   double intpart;
@@ -35,7 +35,7 @@ shared_ptr<ASTNode> pf_minus(vector<shared_ptr<ASTNode>> &args) {
     result = stod(args[0]->head->value);
   else
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "minus: invalid argument type " + args[0]->head->value);
 
   for (int i = 1; i < args.size(); i++) {
     auto &arg = args[i];
@@ -43,7 +43,7 @@ shared_ptr<ASTNode> pf_minus(vector<shared_ptr<ASTNode>> &args) {
       result -= stod(arg->head->value);
     else
       throw RuntimeError(arg->head->span,
-                         "invalid argument type " + arg->head->value);
+                         "minus: invalid argument type " + arg->head->value);
   }
 
   double intpart;
@@ -66,7 +66,7 @@ shared_ptr<ASTNode> pf_times(vector<shared_ptr<ASTNode>> &args) {
       result *= stod(arg->head->value);
     else
       throw RuntimeError(arg->head->span,
-                         "invalid argument type " + arg->head->value);
+                         "times: invalid argument type " + arg->head->value);
   }
 
   double intpart;
@@ -87,14 +87,14 @@ shared_ptr<ASTNode> pf_divide(vector<shared_ptr<ASTNode>> &args) {
 
   if (args[0]->node_type != ASTNodeType::LEAF)
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "divide: invalid argument type " + args[0]->head->value);
 
   if (args[0]->head->type == TokenType::INT ||
       args[0]->head->type == TokenType::REAL)
     result = stod(args[0]->head->value);
   else
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "divide: invalid argument type " + args[0]->head->value);
 
   for (int i = 1; i < args.size(); i++) {
     auto &arg = args[i];
@@ -104,7 +104,7 @@ shared_ptr<ASTNode> pf_divide(vector<shared_ptr<ASTNode>> &args) {
       result /= stod(arg->head->value);
     else
       throw RuntimeError(arg->head->span,
-                         "invalid argument type " + arg->head->value);
+                         "divide: invalid argument type " + arg->head->value);
   }
 
   double intpart;
@@ -121,28 +121,32 @@ shared_ptr<ASTNode> pf_divide(vector<shared_ptr<ASTNode>> &args) {
 }
 
 shared_ptr<ASTNode> pf_println(vector<shared_ptr<ASTNode>> &args) {
+  print_func(args);
+
+  return nullptr;
+}
+
+void print_func(vector<shared_ptr<ASTNode>> &args, bool is_recursive) {
   for (auto &arg : args) {
     if (arg->node_type == ASTNodeType::LEAF)
       cout << arg->head->value << ' ';
     else if (arg->node_type == ASTNodeType::LIST ||
              arg->node_type == ASTNodeType::QUOTE_LIST) {
-      cout << "'(";
-      for (auto &child : arg->children)
-        cout << child->head->value << ' ';
-      cout << ')';
+      cout << "'( ";
+      print_func(arg->children, true);
+      cout << ") ";
     } else
       throw RuntimeError(arg->head->span,
-                         "invalid argument type " + arg->head->value);
+                         "println: invalid argument type " + arg->head->value);
   }
-  cout << '\n';
-
-  return nullptr;
+  if (!is_recursive)
+    cout << '\n';
 }
 
 shared_ptr<ASTNode> pf_equal(vector<shared_ptr<ASTNode>> &args) {
   if (args[0]->node_type != args[1]->node_type)
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "equal: invalid argument type " + args[0]->head->value);
 
   const ASTNodeType &type1 = args[0]->node_type;
   const ASTNodeType &type2 = args[1]->node_type;
@@ -180,7 +184,7 @@ shared_ptr<ASTNode> pf_equal(vector<shared_ptr<ASTNode>> &args) {
 
   default:
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "equal: invalid argument type " + args[0]->head->value);
   }
 }
 
@@ -195,7 +199,7 @@ shared_ptr<ASTNode> pf_nonequal(vector<shared_ptr<ASTNode>> &args) {
 shared_ptr<ASTNode> pf_less(vector<shared_ptr<ASTNode>> &args) {
   if (args[0]->node_type != args[1]->node_type)
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "less: invalid argument type " + args[0]->head->value);
 
   const ASTNodeType &type1 = args[0]->node_type;
   const ASTNodeType &type2 = args[1]->node_type;
@@ -216,14 +220,14 @@ shared_ptr<ASTNode> pf_less(vector<shared_ptr<ASTNode>> &args) {
 
   default:
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "less: invalid argument type " + args[0]->head->value);
   }
 }
 
 shared_ptr<ASTNode> pf_lesseq(vector<shared_ptr<ASTNode>> &args) {
   if (args[0]->node_type != args[1]->node_type)
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "lesseq: invalid argument type " + args[0]->head->value);
 
   const ASTNodeType &type1 = args[0]->node_type;
   const ASTNodeType &type2 = args[1]->node_type;
@@ -244,14 +248,14 @@ shared_ptr<ASTNode> pf_lesseq(vector<shared_ptr<ASTNode>> &args) {
 
   default:
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "lesseq: invalid argument type " + args[0]->head->value);
   }
 }
 
 shared_ptr<ASTNode> pf_greater(vector<shared_ptr<ASTNode>> &args) {
   if (args[0]->node_type != args[1]->node_type)
-    throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+    throw RuntimeError(args[0]->head->span, "greater: invalid argument type " +
+                                                args[0]->head->value);
 
   const ASTNodeType &type1 = args[0]->node_type;
   const ASTNodeType &type2 = args[1]->node_type;
@@ -271,15 +275,16 @@ shared_ptr<ASTNode> pf_greater(vector<shared_ptr<ASTNode>> &args) {
   }
 
   default:
-    throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+    throw RuntimeError(args[0]->head->span, "greater: invalid argument type " +
+                                                args[0]->head->value);
   }
 }
 
 shared_ptr<ASTNode> pf_greatereq(vector<shared_ptr<ASTNode>> &args) {
   if (args[0]->node_type != args[1]->node_type)
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "greatereq: invalid argument type " +
+                           args[0]->head->value);
 
   const ASTNodeType &type1 = args[0]->node_type;
   const ASTNodeType &type2 = args[1]->node_type;
@@ -300,7 +305,8 @@ shared_ptr<ASTNode> pf_greatereq(vector<shared_ptr<ASTNode>> &args) {
 
   default:
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "greatereq: invalid argument type " +
+                           args[0]->head->value);
   }
 }
 
@@ -313,7 +319,7 @@ shared_ptr<ASTNode> pf_and(vector<shared_ptr<ASTNode>> &args) {
             make_shared<Token>(TokenType::BOOL, "false", arg->head->span));
     } else
       throw RuntimeError(arg->head->span,
-                         "invalid argument type " + arg->head->value);
+                         "and: invalid argument type " + arg->head->value);
   }
 
   return make_shared<ASTNode>(
@@ -330,7 +336,7 @@ shared_ptr<ASTNode> pf_or(vector<shared_ptr<ASTNode>> &args) {
             make_shared<Token>(TokenType::BOOL, "true", arg->head->span));
     } else
       throw RuntimeError(arg->head->span,
-                         "invalid argument type " + arg->head->value);
+                         "or: invalid argument type " + arg->head->value);
   }
 
   return make_shared<ASTNode>(
@@ -350,7 +356,7 @@ shared_ptr<ASTNode> pf_not(vector<shared_ptr<ASTNode>> &args) {
           make_shared<Token>(TokenType::BOOL, "true", args[0]->head->span));
   } else
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "not: invalid argument type " + args[0]->head->value);
 
   return nullptr;
 }
@@ -363,7 +369,7 @@ shared_ptr<ASTNode> pf_xor(vector<shared_ptr<ASTNode>> &args) {
         count++;
     } else
       throw RuntimeError(arg->head->span,
-                         "invalid argument type " + arg->head->value);
+                         "xor: invalid argument type " + arg->head->value);
   }
 
   if (count % 2 == 0)
@@ -377,7 +383,12 @@ shared_ptr<ASTNode> pf_xor(vector<shared_ptr<ASTNode>> &args) {
 }
 
 shared_ptr<ASTNode> pf_eval(vector<shared_ptr<ASTNode>> &args) {
-  return nullptr;
+  switch (args[0]->node_type) {
+  case ASTNodeType::QUOTE_LIST:
+    return make_shared<ListNode>(args[0]->children);
+  default:
+    return args[0];
+  }
 }
 
 shared_ptr<ASTNode> pf_isint(vector<shared_ptr<ASTNode>> &args) {
@@ -392,7 +403,7 @@ shared_ptr<ASTNode> pf_isint(vector<shared_ptr<ASTNode>> &args) {
           make_shared<Token>(TokenType::BOOL, "false", args[0]->head->span));
   } else
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "isint: invalid argument type " + args[0]->head->value);
 }
 
 shared_ptr<ASTNode> pf_isreal(vector<shared_ptr<ASTNode>> &args) {
@@ -407,7 +418,7 @@ shared_ptr<ASTNode> pf_isreal(vector<shared_ptr<ASTNode>> &args) {
           make_shared<Token>(TokenType::BOOL, "false", args[0]->head->span));
   } else
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "isreal: invalid argument type " + args[0]->head->value);
 }
 
 shared_ptr<ASTNode> pf_isbool(vector<shared_ptr<ASTNode>> &args) {
@@ -422,7 +433,7 @@ shared_ptr<ASTNode> pf_isbool(vector<shared_ptr<ASTNode>> &args) {
           make_shared<Token>(TokenType::BOOL, "false", args[0]->head->span));
   } else
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "isbool: invalid argument type " + args[0]->head->value);
 }
 
 shared_ptr<ASTNode> pf_isnull(vector<shared_ptr<ASTNode>> &args) {
@@ -437,7 +448,7 @@ shared_ptr<ASTNode> pf_isnull(vector<shared_ptr<ASTNode>> &args) {
           make_shared<Token>(TokenType::BOOL, "false", args[0]->head->span));
   } else
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "isnull: invalid argument type " + args[0]->head->value);
 
   return nullptr;
 }
@@ -469,19 +480,19 @@ shared_ptr<ASTNode> pf_head(vector<shared_ptr<ASTNode>> &args) {
   if (args[0]->node_type == ASTNodeType::LIST ||
       args[0]->node_type == ASTNodeType::QUOTE_LIST) {
     if (args[0]->children.size() == 0)
-      throw RuntimeError(args[0]->head->span, "empty list");
+      throw RuntimeError(args[0]->head->span, "head: empty list");
 
     return args[0]->children[0];
   } else
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "head: invalid argument type " + args[0]->head->value);
 }
 
 shared_ptr<ASTNode> pf_tail(vector<shared_ptr<ASTNode>> &args) {
   if (args[0]->node_type == ASTNodeType::LIST ||
       args[0]->node_type == ASTNodeType::QUOTE_LIST) {
     if (args[0]->children.size() == 0)
-      throw RuntimeError(args[0]->head->span, "empty list");
+      throw RuntimeError(args[0]->head->span, "tail: empty list");
 
     vector<shared_ptr<ASTNode>> res = args[0]->children;
     res.erase(res.begin());
@@ -489,7 +500,7 @@ shared_ptr<ASTNode> pf_tail(vector<shared_ptr<ASTNode>> &args) {
     return make_shared<ListNode>(res);
   } else
     throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "tail: invalid argument type " + args[0]->head->value);
 }
 
 shared_ptr<ASTNode> pf_cons(vector<shared_ptr<ASTNode>> &args) {
@@ -501,7 +512,7 @@ shared_ptr<ASTNode> pf_cons(vector<shared_ptr<ASTNode>> &args) {
     return make_shared<ListNode>(res);
   } else
     throw RuntimeError(args[1]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+                       "cons: invalid argument type " + args[0]->head->value);
 }
 
 shared_ptr<ASTNode> pf_isempty(vector<shared_ptr<ASTNode>> &args) {
@@ -516,6 +527,6 @@ shared_ptr<ASTNode> pf_isempty(vector<shared_ptr<ASTNode>> &args) {
           ASTNodeType::LEAF,
           make_shared<Token>(TokenType::BOOL, "false", args[0]->head->span));
   } else
-    throw RuntimeError(args[0]->head->span,
-                       "invalid argument type " + args[0]->head->value);
+    throw RuntimeError(args[0]->head->span, "isempty: invalid argument type " +
+                                                args[0]->head->value);
 }

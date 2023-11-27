@@ -29,18 +29,19 @@ void Interpreter::eval_result(shared_ptr<ASTNode> const &node,
   } else if (node->node_type == ASTNodeType::LIST) {
     cout << "(";
     for (int i = 0; i < node->children.size(); i++) {
-      eval_result(node->children[i], true);
+      eval_result(interpret(node->children[i]), true);
       if (i != node->children.size() - 1)
         cout << " ";
     }
     cout << ")";
   } else if (node->node_type == ASTNodeType::QUOTE_LIST) {
-    cout << "'";
+    cout << "'(";
     for (int i = 0; i < node->children.size(); i++) {
       eval_result(node->children[i], true);
       if (i != node->children.size() - 1)
         cout << " ";
     }
+    cout << ")";
   } else {
     cout << "(" << node->head->value;
     cout << " ";
@@ -64,8 +65,7 @@ shared_ptr<ASTNode> Interpreter::interpret(shared_ptr<ASTNode> const &node) {
   case ASTNodeType::FUNCCALL:
     return interpret_funccall(static_pointer_cast<FuncCallNode>(node));
   case ASTNodeType::LAMBDA:
-    interpret_lambda(static_pointer_cast<LambdaNode>(node));
-    break;
+    return interpret_lambda(static_pointer_cast<LambdaNode>(node));
   case ASTNodeType::LIST:
     return interpret_list(static_pointer_cast<ListNode>(node));
   case ASTNodeType::QUOTE_LIST:
@@ -132,6 +132,11 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
     }
   }
 
+  if (funcdef->node_type != ASTNodeType::FUNCDEF &&
+      funcdef->node_type != ASTNodeType::LAMBDA) {
+    throw runtime_error(name + " is not a function");
+  }
+
   auto const &params = funcdef->node_type == ASTNodeType::FUNCDEF
                            ? funcdef->children[1]
                            : funcdef->children[0];
@@ -143,6 +148,14 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
 
   for (int i = 0; i < params->children.size(); i++) {
     stack.back()[params->children[i]->head->value] = interpret(args[i]);
+  }
+
+  if (body->node_type == ASTNodeType::PROG) {
+    for (auto &child : body->children) {
+      if (child->node_type == ASTNodeType::SETQ) {
+        stack.back()[child->children[0]->head->value] = nullptr;
+      }
+    }
   }
 
   shared_ptr<ASTNode> res = interpret(body);
@@ -189,7 +202,10 @@ void Interpreter::interpret_while(shared_ptr<WhileNode> const &node) {
   stack.pop_back();
 }
 
-void Interpreter::interpret_lambda(shared_ptr<LambdaNode> const &node) {}
+shared_ptr<ASTNode>
+Interpreter::interpret_lambda(shared_ptr<LambdaNode> const &node) {
+  return node;
+}
 
 shared_ptr<ASTNode>
 Interpreter::interpret_list(shared_ptr<ListNode> const &node) {
@@ -216,9 +232,11 @@ Interpreter::interpret_cond(shared_ptr<CondNode> const &node) {
   if (cond_res->node_type == ASTNodeType::LEAF &&
       (cond_res->head->value == "true" || cond_res->head->value == "1")) {
     return interpret(node->getBranchTrue());
-  } else {
+  } else if (node->getBranchFalse() != nullptr) {
     return interpret(node->getBranchFalse());
   }
+
+  return nullptr;
 }
 
 shared_ptr<ASTNode>

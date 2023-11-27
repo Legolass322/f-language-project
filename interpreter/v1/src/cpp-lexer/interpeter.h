@@ -68,8 +68,8 @@ private:
   void interpret_setq(shared_ptr<SetqNode> const &node);
   void interpret_break(shared_ptr<ASTNode> const &node);
   void interpret_while(shared_ptr<WhileNode> const &node);
-  void interpret_lambda(shared_ptr<LambdaNode> const &node);
 
+  shared_ptr<ASTNode> interpret_lambda(shared_ptr<LambdaNode> const &node);
   shared_ptr<ASTNode> interpret_funccall(shared_ptr<FuncCallNode> const &node);
   shared_ptr<ASTNode> interpret_list(shared_ptr<ListNode> const &node);
   shared_ptr<ASTNode> interpret_return(shared_ptr<ReturnNode> const &node);

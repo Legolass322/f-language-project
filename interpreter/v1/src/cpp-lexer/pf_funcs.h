@@ -30,3 +30,5 @@ shared_ptr<ASTNode> pf_cons(vector<shared_ptr<ASTNode>> &args);
 shared_ptr<ASTNode> pf_isempty(vector<shared_ptr<ASTNode>> &args);
 shared_ptr<ASTNode> pf_foldl(vector<shared_ptr<ASTNode>> &args);
 shared_ptr<ASTNode> pf_println(vector<shared_ptr<ASTNode>> &args);
+
+void print_func(vector<shared_ptr<ASTNode>> &args, bool is_recursive = false);

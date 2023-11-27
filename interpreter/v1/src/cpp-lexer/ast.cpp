@@ -149,8 +149,11 @@ void ASTNode::print(shared_ptr<Agraph_t> const &graph) {
 FuncDefNode::FuncDefNode() {}
 
 FuncDefNode::FuncDefNode(shared_ptr<Token> const &head,
-                         vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(FUNCDEF, head, children) {}
+                         vector<shared_ptr<ASTNode>> const &children,
+                         bool is_recursive)
+    : ASTNode(FUNCDEF, head, children) {
+  this->is_recursive = is_recursive;
+}
 
 shared_ptr<Token> FuncDefNode::getName() { return children[0]->head; }
 shared_ptr<ASTNode> FuncDefNode::getBody() { return children[2]; }
@@ -362,7 +365,6 @@ shared_ptr<ASTNode> CondNode::copy() {
 }
 
 void CondNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "print cond" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "CondNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -447,7 +449,6 @@ shared_ptr<ASTNode> ProgNode::copy() {
 }
 
 void ProgNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "print prog" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "ProgNode\n";
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
@@ -494,7 +495,6 @@ shared_ptr<ASTNode> SetqNode::copy() {
 }
 
 void SetqNode::print(shared_ptr<Agraph_t> const &graph) {
-  cout << "print setq" << endl;
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
   string label = "SetqNode\n" + getName()->value;
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
