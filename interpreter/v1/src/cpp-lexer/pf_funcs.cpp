@@ -28,7 +28,6 @@ shared_ptr<ASTNode> pf_plus(vector<shared_ptr<ASTNode>> &args) {
 }
 
 shared_ptr<ASTNode> pf_minus(vector<shared_ptr<ASTNode>> &args) {
-  cout << "minus" << '\n';
   double result = 0;
   if (args[0]->head->type == TokenType::INT ||
       args[0]->head->type == TokenType::REAL)

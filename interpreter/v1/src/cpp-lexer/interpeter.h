@@ -31,7 +31,7 @@ private:
       "less",    "lesseq", "greater", "greatereq", "and",    "or",
       "not",     "xor",    "eval",    "isint",     "isreal", "isbool",
       "isnull",  "isatom", "islist",  "head",      "tail",   "cons",
-      "isempty", "foldl",  "println"};
+      "isempty", "foldl",  "println", "require"};
 
   const map<string, shared_ptr<ASTNode> (*)(vector<shared_ptr<ASTNode>> &)>
       PF_FUNC_MAP = {{"plus", pf_plus},

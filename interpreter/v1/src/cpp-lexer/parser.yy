@@ -47,6 +47,7 @@
 %token <std::string> SYM_LPAREN "(" 
 %token <std::string> SYM_RPAREN ")" 
 %token <std::string> SYM_QUOTE "'"
+%token <std::string> SYM_DQUOTE "\""
 
 %left SYM_LPAREN SYM_RPAREN
 %left PF_PLUS PF_TIMES PF_DIVIDE PF_MINUS
@@ -140,6 +141,19 @@ element:
       }
     | stmt { $$ = $1;}
     | "(" ")" { $$ = std::make_shared<ListNode>(true, vector<shared_ptr<ASTNode>>());}
+    | "\"" atom "\"" 
+    {
+      std::string s = $2->value;
+
+      std::vector<std::shared_ptr<ASTNode>> children;
+
+      for (auto& c : s) {
+        std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::CHAR, std::string(1, c), Span({@1.begin.line, @1.begin.column}));
+        children.push_back(std::make_shared<ASTNode>(ASTNodeType::LEAF, t));
+      }
+
+      $$ = std::make_shared<ListNode>(true, children);
+    }
 
 func_def:
     "(" SF_FUNC IDENTIFIER list stmt ")"
@@ -610,4 +624,5 @@ literal:
 
 void yy::parser::error(const location_type& l, const std::string& m) {
   std::cerr << l << ": " << m << std::endl;
+  throw std::runtime_error("parse error");
 }

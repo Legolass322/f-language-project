@@ -1,5 +1,6 @@
 #include "semantic_analyzer.h"
 #include "ast.h"
+#include "driver.hh"
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -14,11 +15,92 @@ SemanticAnalyzer::SemanticAnalyzer() { tmp_counter = 0; }
 
 SemanticAnalyzer::~SemanticAnalyzer() {}
 
+shared_ptr<ASTNode> SemanticAnalyzer::inline_require(shared_ptr<ASTNode> node) {
+  if (node->node_type == QUOTE_LIST) {
+    string filename;
+
+    for (auto &child : node->children) {
+      filename += child->head->value;
+    }
+
+    filename += ".flang";
+
+    FILE *file = fopen(filename.c_str(), "r");
+
+    if (file == nullptr)
+      throw RuntimeError(node->head->span, "File not found");
+
+    Driver drv;
+    drv.parse(filename);
+
+    auto ast = drv.ast;
+
+    if (ast == nullptr)
+      throw RuntimeError(node->head->span, "File not found");
+
+    return ast;
+  }
+
+  throw RuntimeError(node->head->span, "Invalid require statement");
+}
+
+void SemanticAnalyzer::clear_stack(shared_ptr<ASTNode> &root) {
+  if (root == nullptr)
+    return;
+
+  while (scope_stack.size() > 1) {
+    scope_stack.pop_back();
+  }
+
+  for (auto &child : root->children) {
+    if (child->node_type == FUNCDEF) {
+      auto funcdef_node = static_pointer_cast<FuncDefNode>(child);
+      auto name = funcdef_node->getName()->value;
+
+      if (scope_stack.back().variables.find(name) !=
+          scope_stack.back().variables.end()) {
+        scope_stack.back().variables.erase(name);
+      }
+    } else if (child->node_type == SETQ) {
+      auto setq_node = static_pointer_cast<SetqNode>(child);
+      auto name = setq_node->getName()->value;
+
+      if (scope_stack.back().variables.find(name) !=
+          scope_stack.back().variables.end()) {
+        scope_stack.back().variables.erase(name);
+      }
+    }
+  }
+}
+
 void SemanticAnalyzer::analyze(shared_ptr<ASTNode> &root) {
-  scope_stack.push_back(Scope(root));
+  if (root == nullptr)
+    return;
+
+  if (scope_stack.size() == 0)
+    scope_stack.push_back(Scope(root));
 
   // entry point for semantic analysis
-  for (auto &node : root->children) {
+  for (int i = 0; i < root->children.size(); ++i) {
+    auto &node = root->children[i];
+
+    // check for require statements
+    if (node->node_type == FUNCCALL) {
+      auto func_call = static_pointer_cast<FuncCallNode>(node);
+      if (func_call->getName()->value == "require") {
+        shared_ptr<ASTNode> ast = inline_require(func_call->getArgs()[0]);
+
+        // remove require statement
+        root->children.erase(root->children.begin() + i);
+
+        for (auto &child : ast->children) {
+          root->children.insert(root->children.begin() + i, child);
+        }
+
+        continue;
+      }
+    }
+
     node = analyze_node(node);
   }
 }
@@ -203,7 +285,7 @@ shared_ptr<ASTNode> SemanticAnalyzer::inline_function(
             make_shared<Token>(IDENTIFIER, tmp->second, node->head->span));
       }
     }
-  } else if (node->node_type == FUNCCALL) {
+  } else if (node->node_type == FUNCCALL) { // if argument is a function
     auto func_call = static_pointer_cast<FuncCallNode>(node);
     auto arg = params_to_args.find(func_call->getName()->value);
     if (arg != params_to_args.end()) {
@@ -446,6 +528,12 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
     }
 
   } catch (FunctionNotFoundError &e) {
+
+    if (identifier == "require") {
+      inline_require(node);
+      return nullptr;
+    }
+
     // Function not found, check if it is a predefined function
     if (find(PF_FUNCTIONS.begin(), PF_FUNCTIONS.end(), identifier) ==
         PF_FUNCTIONS.end())

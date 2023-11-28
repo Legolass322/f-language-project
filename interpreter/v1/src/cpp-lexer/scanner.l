@@ -73,13 +73,14 @@ false {return yy::parser::make_FALSE(yytext, loc);}
 null {return yy::parser::make_NULL(yytext, loc);}
 
 \' {return yy::parser::make_SYM_QUOTE(yytext, loc);}
+\" {return yy::parser::make_SYM_DQUOTE(yytext, loc);}
 
 [+|-]?[0-9]+ {return yy::parser::make_INT (yytext, loc);}
 [+|-]?[0-9]+\.[0-9]+ {return yy::parser::make_REAL(yytext, loc);}
 
 [a-zA-Z][a-zA-Z0-9]* {return yy::parser::make_IDENTIFIER(yytext, loc);}
 
-;.+\n {}
+;.+\n {loc.step();}
 
 [ ] {loc.step();}
 [\t] {loc.step();}

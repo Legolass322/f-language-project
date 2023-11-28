@@ -15,6 +15,7 @@ public:
   std::shared_ptr<flang::ASTNode> ast;
 
   void parse_ast(const std::shared_ptr<flang::ASTNode> &ast);
+  void clear_ast();
 
   int parse(const std::string &f);
 

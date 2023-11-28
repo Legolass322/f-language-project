@@ -34,6 +34,7 @@ public:
   ~SemanticAnalyzer();
 
   void analyze(shared_ptr<ASTNode> &root);
+  void clear_stack(shared_ptr<ASTNode> &root);
 
 private:
   vector<Scope> scope_stack;
@@ -78,6 +79,8 @@ private:
   shared_ptr<ASTNode>
   get_inlined_lambda(shared_ptr<LambdaNode> const &lambda,
                      vector<shared_ptr<ASTNode>> const &args);
+
+  shared_ptr<ASTNode> inline_require(shared_ptr<ASTNode> node);
 };
 
 class RuntimeError : public exception {

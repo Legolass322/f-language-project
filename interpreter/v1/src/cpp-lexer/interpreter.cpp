@@ -55,6 +55,9 @@ void Interpreter::eval_result(shared_ptr<ASTNode> const &node,
 }
 
 shared_ptr<ASTNode> Interpreter::interpret(shared_ptr<ASTNode> const &node) {
+  if (node == nullptr)
+    return nullptr;
+
   switch (node->node_type) {
   case ASTNodeType::PROGRAM:
     interpret_program(node);
