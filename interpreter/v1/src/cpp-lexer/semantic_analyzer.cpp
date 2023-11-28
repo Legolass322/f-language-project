@@ -90,12 +90,15 @@ void SemanticAnalyzer::analyze(shared_ptr<ASTNode> &root) {
       if (func_call->getName()->value == "require") {
         shared_ptr<ASTNode> ast = inline_require(func_call->getArgs()[0]);
 
+        int j = i + 1;
+        for (auto &child : ast->children) {
+          cout << child->children[0]->head->value << endl;
+          root->children.insert(root->children.begin() + j, child);
+          j++;
+        }
         // remove require statement
         root->children.erase(root->children.begin() + i);
-
-        for (auto &child : ast->children) {
-          root->children.insert(root->children.begin() + i, child);
-        }
+        i--;
 
         continue;
       }
