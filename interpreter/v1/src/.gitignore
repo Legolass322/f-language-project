@@ -3,7 +3,7 @@ ast_parser
 cpp_lexer
 parser.tab.cc
 parser.tab.hh
-test.flang
 location.hh
-cpp-lexer/ast.dot
-cpp-lexer/ast.svg
+cpp-lexer/*.flang
+cpp-lexer/*.dot
+cpp-lexer/*.svg

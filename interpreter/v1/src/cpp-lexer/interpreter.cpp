@@ -123,7 +123,7 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
     for (auto const &arg : args) {
       v_args.push_back(interpret(arg));
     }
-    return PF_FUNC_MAP.at(name)(v_args);
+    return interpret(PF_FUNC_MAP.at(name)(v_args));
   }
 
   shared_ptr<ASTNode> funcdef;

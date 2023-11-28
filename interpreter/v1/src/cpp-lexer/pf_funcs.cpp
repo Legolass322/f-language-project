@@ -384,6 +384,13 @@ shared_ptr<ASTNode> pf_xor(vector<shared_ptr<ASTNode>> &args) {
 shared_ptr<ASTNode> pf_eval(vector<shared_ptr<ASTNode>> &args) {
   switch (args[0]->node_type) {
   case ASTNodeType::QUOTE_LIST:
+    if (args[0]->children[0]->node_type == ASTNodeType::LEAF) {
+      return make_shared<FuncCallNode>(
+          args[0]->children[0]->head,
+          vector<shared_ptr<ASTNode>>(args[0]->children.begin() + 1,
+                                      args[0]->children.end()));
+    }
+
     return make_shared<ListNode>(args[0]->children);
   default:
     return args[0];

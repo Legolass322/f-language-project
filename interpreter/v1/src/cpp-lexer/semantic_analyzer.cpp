@@ -92,10 +92,10 @@ void SemanticAnalyzer::analyze(shared_ptr<ASTNode> &root) {
 
         int j = i + 1;
         for (auto &child : ast->children) {
-          cout << child->children[0]->head->value << endl;
           root->children.insert(root->children.begin() + j, child);
           j++;
         }
+
         // remove require statement
         root->children.erase(root->children.begin() + i);
         i--;
