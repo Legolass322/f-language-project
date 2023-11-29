@@ -624,5 +624,4 @@ literal:
 
 void yy::parser::error(const location_type& l, const std::string& m) {
   std::cerr << l << ": " << m << std::endl;
-  throw std::runtime_error("parse error");
 }

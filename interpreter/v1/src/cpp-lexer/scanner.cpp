@@ -2138,6 +2138,7 @@ void yyfree (void * ptr )
 void
 Driver::scan_begin ()
 {
+  YY_FLUSH_BUFFER;
   yy_flex_debug = trace_scanning;
   if (file.empty () || file == "-")
     yyin = stdin;

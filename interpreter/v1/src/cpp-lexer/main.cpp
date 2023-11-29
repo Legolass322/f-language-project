@@ -70,14 +70,16 @@ int main(int argc, char *argv[]) {
         fclose(tmp);
 
         try {
-          drv.parse("tmp.flang");
+          if (drv.parse("tmp.flang")) {
+            throw std::runtime_error("Parsing failed");
+          }
+
           semantic_analyzer.analyze(drv.ast);
           generate_graph_svg(drv.ast, "repl.svg");
           interpreter.interpret(drv.ast);
         } catch (std::exception &e) {
           std::cout << e.what() << '\n';
           semantic_analyzer.clear_stack(drv.ast);
-          drv.clear_ast();
         }
 
         std::cout << '\n';

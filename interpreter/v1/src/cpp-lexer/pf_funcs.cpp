@@ -1,6 +1,7 @@
 #include "pf_funcs.h"
 #include "ast.h"
 #include "semantic_analyzer.h"
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 
@@ -144,8 +145,9 @@ void print_func(vector<shared_ptr<ASTNode>> &args, bool is_recursive) {
 
 shared_ptr<ASTNode> pf_equal(vector<shared_ptr<ASTNode>> &args) {
   if (args[0]->node_type != args[1]->node_type)
-    throw RuntimeError(args[0]->head->span,
-                       "equal: invalid argument type " + args[0]->head->value);
+    return make_shared<ASTNode>(
+        ASTNodeType::LEAF,
+        make_shared<Token>(TokenType::BOOL, "false", args[0]->head->span));
 
   const ASTNodeType &type1 = args[0]->node_type;
   const ASTNodeType &type2 = args[1]->node_type;
@@ -158,10 +160,11 @@ shared_ptr<ASTNode> pf_equal(vector<shared_ptr<ASTNode>> &args) {
     return make_shared<ASTNode>(
         ASTNodeType::LEAF,
         make_shared<Token>(TokenType::BOOL,
-                           to_string(token1.value == token2.value),
+                           token1.value == token2.value ? "true" : "false",
                            token1.span));
 
   case ASTNodeType::LIST:
+  case ASTNodeType::QUOTE_LIST:
     if (args[0]->children.size() != args[1]->children.size())
       return make_shared<ASTNode>(
           ASTNodeType::LEAF,
@@ -170,7 +173,7 @@ shared_ptr<ASTNode> pf_equal(vector<shared_ptr<ASTNode>> &args) {
     for (int i = 0; i < args[0]->children.size(); i++) {
       vector<shared_ptr<ASTNode>> arg = {args[0]->children[i],
                                          args[1]->children[i]};
-      auto res = pf_equal(args);
+      auto res = pf_equal(arg);
       if (res->head->value == "false")
         return make_shared<ASTNode>(
             ASTNodeType::LEAF,
@@ -382,13 +385,29 @@ shared_ptr<ASTNode> pf_xor(vector<shared_ptr<ASTNode>> &args) {
 }
 
 shared_ptr<ASTNode> pf_eval(vector<shared_ptr<ASTNode>> &args) {
+  const map<string, ASTNodeType> &node_type_map = {
+      {"func", ASTNodeType::FUNCDEF},     {"lambda", ASTNodeType::LAMBDA},
+      {"quote", ASTNodeType::QUOTE_LIST}, {"break", ASTNodeType::BREAK},
+      {"return", ASTNodeType::RETURN},    {"cond", ASTNodeType::COND},
+      {"while", ASTNodeType::WHILE},      {"setq", ASTNodeType::SETQ},
+      {"prog", ASTNodeType::PROG}};
+
   switch (args[0]->node_type) {
   case ASTNodeType::QUOTE_LIST:
     if (args[0]->children[0]->node_type == ASTNodeType::LEAF) {
-      return make_shared<FuncCallNode>(
-          args[0]->children[0]->head,
-          vector<shared_ptr<ASTNode>>(args[0]->children.begin() + 1,
-                                      args[0]->children.end()));
+
+      if (node_type_map.find(args[0]->children[0]->head->value) !=
+          node_type_map.end())
+        return make_shared<ASTNode>(
+            node_type_map.at(args[0]->children[0]->head->value),
+            args[0]->children[0]->head,
+            vector<shared_ptr<ASTNode>>(args[0]->children.begin() + 1,
+                                        args[0]->children.end()));
+      else
+        return make_shared<ASTNode>(
+            ASTNodeType::FUNCCALL, args[0]->children[0]->head,
+            vector<shared_ptr<ASTNode>>(args[0]->children.begin() + 1,
+                                        args[0]->children.end()));
     }
 
     return make_shared<ListNode>(args[0]->children);

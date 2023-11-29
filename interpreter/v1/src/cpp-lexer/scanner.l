@@ -97,6 +97,7 @@ null {return yy::parser::make_NULL(yytext, loc);}
 void
 Driver::scan_begin ()
 {
+  YY_FLUSH_BUFFER;
   yy_flex_debug = trace_scanning;
   if (file.empty () || file == "-")
     yyin = stdin;
