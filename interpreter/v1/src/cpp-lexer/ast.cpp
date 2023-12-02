@@ -206,6 +206,8 @@ shared_ptr<Token> FuncCallNode::getName() {
   if (children[0]->node_type != LEAF)
     return head;
 
+  head = children[0]->head;
+
   return children[0]->head;
 }
 vector<shared_ptr<ASTNode>> FuncCallNode::getArgs() {
@@ -561,4 +563,70 @@ shared_ptr<Token> flang::calculate(vector<shared_ptr<ASTNode>> const &args,
   } else {
     return make_shared<Token>(REAL, to_string(result), args[0]->head->span);
   }
+}
+
+ostream &flang::operator<<(ostream &os, const Token &token) {
+  os << token.value;
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const ASTNode &node) {
+  if (node.node_type == BREAK) {
+    os << "<break>";
+    return os;
+  }
+
+  os << node.head->value;
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const FuncDefNode &node) {
+  os << "<function " << node.children[0]->head->value << ">";
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const FuncCallNode &node) {
+  os << "<function call " << node.children[0]->head->value << ">";
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const LambdaNode &node) {
+  os << "<lambda>";
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const ListNode &node) {
+  os << "(";
+  for (int i = 0; i < node.children.size(); i++) {
+    os << *node.children[i];
+    if (i != node.children.size() - 1)
+      os << " ";
+  }
+  os << ")";
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const ReturnNode &node) {
+  os << "<return>";
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const CondNode &node) {
+  os << "<cond>";
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const WhileNode &node) {
+  os << "<while>";
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const ProgNode &node) {
+  os << "<prog>";
+  return os;
+}
+
+ostream &flang::operator<<(ostream &os, const SetqNode &node) {
+  os << "<setq>";
+  return os;
 }

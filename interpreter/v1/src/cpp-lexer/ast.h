@@ -66,6 +66,7 @@ public:
 class FuncDefNode : public ASTNode {
 public:
   bool is_recursive = false;
+  bool is_inlined = false;
   shared_ptr<Token> getName();
   shared_ptr<ASTNode> getBody();
   shared_ptr<ASTNode> getParams();
@@ -208,6 +209,20 @@ public:
 
 shared_ptr<Token> calculate(vector<shared_ptr<ASTNode>> const &args,
                             string const &op);
+
+// overload cout
+
+ostream &operator<<(ostream &os, const Token &token);
+ostream &operator<<(ostream &os, const ASTNode &node);
+ostream &operator<<(ostream &os, const FuncDefNode &node);
+ostream &operator<<(ostream &os, const FuncCallNode &node);
+ostream &operator<<(ostream &os, const LambdaNode &node);
+ostream &operator<<(ostream &os, const ListNode &node);
+ostream &operator<<(ostream &os, const ReturnNode &node);
+ostream &operator<<(ostream &os, const CondNode &node);
+ostream &operator<<(ostream &os, const WhileNode &node);
+ostream &operator<<(ostream &os, const ProgNode &node);
+ostream &operator<<(ostream &os, const SetqNode &node);
 
 } // namespace flang
 
