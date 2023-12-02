@@ -72,6 +72,8 @@ private:
   get_inlined_function(shared_ptr<FuncDefNode> const &funcdef,
                        vector<shared_ptr<ASTNode>> const &args);
 
+  void mark_inlined_function(shared_ptr<Token> const &identifier);
+
   shared_ptr<FuncCallNode>
   is_recursive_call(shared_ptr<Token> const &identifier,
                     vector<shared_ptr<ASTNode>> const &args);

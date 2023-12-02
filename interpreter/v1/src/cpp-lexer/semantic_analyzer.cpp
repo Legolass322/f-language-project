@@ -186,6 +186,21 @@ SemanticAnalyzer::is_recursive_call(shared_ptr<Token> const &identifier,
   return nullptr;
 }
 
+void SemanticAnalyzer::mark_inlined_function(
+    shared_ptr<Token> const &identifier) {
+  for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
+    auto variable = it->variables.find(identifier->value);
+    if (variable != it->variables.end()) {
+      if (variable->second.value->node_type == FUNCDEF) {
+        auto funcdef_node =
+            static_pointer_cast<FuncDefNode>(variable->second.value);
+        funcdef_node->is_inlined = true;
+        return;
+      }
+    }
+  }
+}
+
 shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
     shared_ptr<FuncDefNode> const &funcdef,
     vector<shared_ptr<ASTNode>> const &args) {
@@ -271,6 +286,10 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
   }
 
   body_children.push_back(node_body);
+
+  // mark function as inlined if it is not the main scope
+  if (scope_stack.size() > 1)
+    mark_inlined_function(funcdef->getName());
 
   return make_shared<ProgNode>(node_body->head, body_children);
 }
@@ -416,6 +435,13 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
 
       node = static_pointer_cast<FuncDefNode>(
           remove_variable(node, scope_stack.back(), it->first));
+    } else if (it->second.value->node_type == FUNCDEF) {
+      auto funcdef_node = static_pointer_cast<FuncDefNode>(it->second.value);
+
+      if (funcdef_node->is_inlined) {
+        node = static_pointer_cast<FuncDefNode>(
+            remove_variable(node, scope_stack.back(), it->first));
+      }
     }
   }
 
@@ -433,8 +459,10 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
 shared_ptr<ASTNode>
 SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
 
-  if (node->children[0]->node_type != LEAF)
+  if (node->children[0]->node_type != LEAF) {
+    node->children[0] = analyze_node(node->children[0]);
     return node;
+  }
 
   string identifier = node->getName()->value;
   Scope &scope = scope_stack.back();
@@ -455,6 +483,7 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
 
       shared_ptr<FuncDefNode> funcdef =
           static_pointer_cast<FuncDefNode>(func_node->copy());
+
       return get_inlined_function(funcdef, args);
     }
 
@@ -574,6 +603,13 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
 #endif
       node = static_pointer_cast<ProgNode>(
           remove_variable(node, scope_stack.back(), it->first));
+    } else if (it->second.value->node_type == FUNCDEF) {
+      auto funcdef_node = static_pointer_cast<FuncDefNode>(it->second.value);
+
+      if (funcdef_node->is_inlined) {
+        node = static_pointer_cast<ProgNode>(
+            remove_variable(node, scope_stack.back(), it->first));
+      }
     }
   }
 
