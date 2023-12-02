@@ -121,26 +121,55 @@ shared_ptr<ASTNode> pf_divide(vector<shared_ptr<ASTNode>> &args) {
 }
 
 shared_ptr<ASTNode> pf_println(vector<shared_ptr<ASTNode>> &args) {
-  print_func(args);
+  for (auto &arg : args) {
+    if (is_string(arg))
+      print_string(arg);
+    else
+      print_func(arg);
+  }
+
+  cout << endl;
 
   return nullptr;
 }
 
-void print_func(vector<shared_ptr<ASTNode>> &args, bool is_recursive) {
-  for (auto &arg : args) {
-    if (arg->node_type == ASTNodeType::LEAF)
-      cout << arg->head->value << ' ';
-    else if (arg->node_type == ASTNodeType::LIST ||
-             arg->node_type == ASTNodeType::QUOTE_LIST) {
-      cout << "'( ";
-      print_func(arg->children, true);
-      cout << ") ";
-    } else
-      throw RuntimeError(arg->head->span,
-                         "println: invalid argument type " + arg->head->value);
+bool is_string(shared_ptr<ASTNode> const &node) {
+  bool is_string = true;
+
+  if (node->node_type != ASTNodeType::LIST &&
+      node->node_type != ASTNodeType::QUOTE_LIST)
+    return false;
+
+  for (auto &arg : node->children) {
+    if (arg->node_type != ASTNodeType::LEAF ||
+        arg->head->type != TokenType::CHAR) {
+      is_string = false;
+      break;
+    }
   }
-  if (!is_recursive)
-    cout << '\n';
+
+  return is_string;
+}
+
+void print_string(shared_ptr<ASTNode> const &node) {
+  for (auto &arg : node->children)
+    cout << arg->head->value;
+
+  cout << ' ';
+}
+
+void print_func(shared_ptr<ASTNode> const &node) {
+  if (node->node_type == ASTNodeType::LEAF)
+    cout << node->head->value << ' ';
+  else if (node->node_type == ASTNodeType::LIST ||
+           node->node_type == ASTNodeType::QUOTE_LIST) {
+    cout << "'( ";
+    for (auto &arg : node->children)
+      print_func(arg);
+    cout << ") ";
+  } else
+    throw RuntimeError(node->head->span,
+                       "println: invalid argument type " + node->head->value);
 }
 
 shared_ptr<ASTNode> pf_equal(vector<shared_ptr<ASTNode>> &args) {
