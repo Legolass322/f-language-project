@@ -2,33 +2,11 @@
 #include "driver.hh"
 #include "interpeter.h"
 #include "semantic_analyzer.h"
+#include "utils.h"
 #include <graphviz/gvc.h>
 #include <iostream>
 
 using interp::Interpreter;
-
-void generate_graph_svg(std::shared_ptr<flang::ASTNode> const &ast,
-                        std::string const &filename = "ast.svg") {
-
-  if (ast == nullptr)
-    return;
-
-  GVC_t *gvc = gvContext();
-
-  std::shared_ptr<Agraph_t> ast_graph =
-      std::shared_ptr<Agraph_t>(agopen((char *)"ast", Agdirected, NULL));
-
-  ast->print(ast_graph);
-
-  FILE *astdot = fopen((char *)"ast.dot", (char *)"w");
-  agwrite(ast_graph.get(), astdot);
-
-  fclose(astdot);
-  gvFreeContext(gvc);
-
-  std::string cmd = "dot -Tsvg ast.dot > " + filename;
-  system(cmd.c_str());
-}
 
 int main(int argc, char *argv[]) {
   int res = 0;
