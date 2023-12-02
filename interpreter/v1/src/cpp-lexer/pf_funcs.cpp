@@ -404,10 +404,8 @@ shared_ptr<ASTNode> pf_eval(vector<shared_ptr<ASTNode>> &args) {
             vector<shared_ptr<ASTNode>>(args[0]->children.begin() + 1,
                                         args[0]->children.end()));
       else
-        return make_shared<ASTNode>(
-            ASTNodeType::FUNCCALL, args[0]->children[0]->head,
-            vector<shared_ptr<ASTNode>>(args[0]->children.begin() + 1,
-                                        args[0]->children.end()));
+        return make_shared<FuncCallNode>(args[0]->children[0]->head,
+                                         args[0]->children);
     }
 
     return make_shared<ListNode>(args[0]->children);

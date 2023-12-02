@@ -44,6 +44,7 @@
 %token <std::string> REAL
 %token <std::string> TRUE FALSE
 %token <std::string> NULL
+%token <std::string> STRING
 %token <std::string> SYM_LPAREN "(" 
 %token <std::string> SYM_RPAREN ")" 
 %token <std::string> SYM_QUOTE "'"
@@ -62,10 +63,10 @@
 %type <std::shared_ptr<ProgNode>> prog_def
 %type <std::shared_ptr<CondNode>> cond_def
 
-%type <std::shared_ptr<ASTNode>> plus_def
-%type <std::shared_ptr<ASTNode>> times_def
-%type <std::shared_ptr<ASTNode>> divide_def
-%type <std::shared_ptr<ASTNode>> minus_def
+%type <std::shared_ptr<FuncCallNode>> plus_def
+%type <std::shared_ptr<FuncCallNode>> times_def
+%type <std::shared_ptr<FuncCallNode>> divide_def
+%type <std::shared_ptr<FuncCallNode>> minus_def
 
 %type <std::shared_ptr<FuncCallNode>> greater_def
 %type <std::shared_ptr<FuncCallNode>> equal_def
@@ -141,9 +142,9 @@ element:
       }
     | stmt { $$ = $1;}
     | "(" ")" { $$ = std::make_shared<ListNode>(true, vector<shared_ptr<ASTNode>>());}
-    | "\"" atom "\"" 
+    | STRING
     {
-      std::string s = $2->value;
+      std::string s = $1.substr(1, $1.length() - 2);
 
       std::vector<std::shared_ptr<ASTNode>> children;
 
@@ -230,8 +231,10 @@ plus_def:
     "(" PF_PLUS elements ")"
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::KEYWORD, $2, Span({@2.begin.line, @2.begin.column}));
+      std::shared_ptr<ASTNode> head_node = std::make_shared<ASTNode>(ASTNodeType::LEAF, t);
+      $3.insert($3.begin(), head_node);
 
-      $$ = std::make_shared<FuncCallNode>(t, $3);
+      $$ = std::make_shared<FuncCallNode>(head_node->head, $3);
 
     }
 
@@ -239,24 +242,30 @@ times_def:
     "(" PF_TIMES elements ")"
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::KEYWORD, $2, Span({@2.begin.line, @2.begin.column}));
+      std::shared_ptr<ASTNode> head_node = std::make_shared<ASTNode>(ASTNodeType::LEAF, t);
+      $3.insert($3.begin(), head_node);
 
-      $$ = std::make_shared<FuncCallNode>(t, $3);
+      $$ = std::make_shared<FuncCallNode>(head_node->head, $3);
     }
 
 divide_def:
     "(" PF_DIVIDE elements ")"
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::KEYWORD, $2, Span({@2.begin.line, @2.begin.column}));
+      std::shared_ptr<ASTNode> head_node = std::make_shared<ASTNode>(ASTNodeType::LEAF, t);
+      $3.insert($3.begin(), head_node);
 
-      $$ = std::make_shared<FuncCallNode>(t, $3);
+      $$ = std::make_shared<FuncCallNode>(head_node->head, $3);
     }
 
 minus_def:
     "(" PF_MINUS elements ")"
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::KEYWORD, $2, Span({@2.begin.line, @2.begin.column}));
+      std::shared_ptr<ASTNode> head_node = std::make_shared<ASTNode>(ASTNodeType::LEAF, t);
+      $3.insert($3.begin(), head_node);
 
-      $$ = std::make_shared<FuncCallNode>(t, $3);
+      $$ = std::make_shared<FuncCallNode>(head_node->head, $3);
     }
 
 head_def:
@@ -264,10 +273,11 @@ head_def:
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::KEYWORD, $2, Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 tail_def:
@@ -275,10 +285,11 @@ tail_def:
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::KEYWORD, $2, Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 cons_def:
@@ -286,11 +297,12 @@ cons_def:
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::KEYWORD, $2, Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3,
         $4
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 setq_def:
@@ -310,19 +322,11 @@ not_def:
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::KEYWORD, $2, Span({@2.begin.line, @2.begin.column}));
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
-    }
-
-func_call:
-    "(" IDENTIFIER elements ")"
-    {
-      std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER, $2, Span({@2.begin.line, @2.begin.column}));
-      std::vector<std::shared_ptr<ASTNode>> children = $3;
-
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 prog_def:
@@ -364,11 +368,12 @@ greater_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER, $2, Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3,
         $4
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 equal_def:
@@ -377,11 +382,12 @@ equal_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER, $2, Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3,
         $4
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 nonequal_def:
@@ -390,11 +396,12 @@ nonequal_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER, $2, Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3,
         $4
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 less_def:
@@ -403,11 +410,12 @@ less_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER, $2, Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3,
         $4
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 lesseq_def:
@@ -416,11 +424,12 @@ lesseq_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER, $2, Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3,
         $4
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 greatereq_def:
@@ -429,11 +438,12 @@ greatereq_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER, $2, Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3,
         $4
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 isint_def:
@@ -442,10 +452,11 @@ isint_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER, "isint", Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 isreal_def:
@@ -454,10 +465,11 @@ isreal_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER, "isreal", Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 isbool_def:
@@ -466,10 +478,11 @@ isbool_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"isbool", Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 isnull_def:
@@ -478,10 +491,11 @@ isnull_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"isnull", Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 isatom_def:
@@ -490,10 +504,11 @@ isatom_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"isatom", Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 islist_def:
@@ -502,10 +517,11 @@ islist_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"islist", Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 eval_def:
@@ -514,59 +530,56 @@ eval_def:
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"eval", Span({@2.begin.line, @2.begin.column}));
 
       std::vector<std::shared_ptr<ASTNode>> children = {
+        std::make_shared<ASTNode>(ASTNodeType::LEAF, t),
         $3
       };
 
-      $$ = std::make_shared<FuncCallNode>(t, children);
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
     }
 
 and_def:
     "(" PF_AND elements ")"
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"and", Span({@2.begin.line, @2.begin.column}));
+      std::shared_ptr<ASTNode> head_node = std::make_shared<ASTNode>(ASTNodeType::LEAF, t);
+      $3.insert($3.begin(), head_node);
 
-      $$ = std::make_shared<FuncCallNode>(t, $3);
+      $$ = std::make_shared<FuncCallNode>(head_node->head, $3);
     }
 
 or_def:
     "(" PF_OR elements ")"
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"or", Span({@2.begin.line, @2.begin.column}));
+      std::shared_ptr<ASTNode> head_node = std::make_shared<ASTNode>(ASTNodeType::LEAF, t);
+      $3.insert($3.begin(), head_node);
 
-      $$ = std::make_shared<FuncCallNode>(t, $3);
+      $$ = std::make_shared<FuncCallNode>(head_node->head, $3);
     }
 
 xor_def:
     "(" PF_XOR elements ")"
     {
       std::shared_ptr<Token> t = std::make_shared<Token>(TokenType::IDENTIFIER,"xor", Span({@2.begin.line, @2.begin.column}));
+      std::shared_ptr<ASTNode> head_node = std::make_shared<ASTNode>(ASTNodeType::LEAF, t);
+      $3.insert($3.begin(), head_node);
 
-      $$ = std::make_shared<FuncCallNode>(t, $3);
+      $$ = std::make_shared<FuncCallNode>(head_node->head, $3);
     }
 
 
 list:
   "(" elements ")" { $$ = std::make_shared<ListNode>($2); }
 
-stmt:
-  func_def {$$ = $1;}
-  | lambda_def {$$ = $1;}
-  | quote_def {$$ = $1;}
-  | return_def {$$ = $1;}
-  | break_def {$$ = $1;}
-  | while_def {$$ = $1;}
-  | plus_def {$$ = $1;}
+func_call:
+  plus_def {$$ = $1;}
   | times_def {$$ = $1;}
   | divide_def {$$ = $1;}
   | minus_def {$$ = $1;}
   | head_def {$$ = $1;}
   | tail_def {$$ = $1;}
   | cons_def {$$ = $1;}
-  | setq_def {$$ = $1;}
   | not_def {$$ = $1;}
-  | func_call {$$ = $1;}
-  | prog_def {$$ = $1;}
-  | cond_def {$$ = $1;}
   | greater_def {$$ = $1;}
   | equal_def {$$ = $1;}
   | nonequal_def {$$ = $1;}
@@ -583,6 +596,25 @@ stmt:
   | and_def {$$ = $1;}
   | or_def {$$ = $1;}
   | xor_def {$$ = $1;}
+  | "(" elements ")"
+  {
+    std::vector<std::shared_ptr<ASTNode>> children = $2;
+
+    $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
+  }
+  ;
+
+stmt:
+  func_def {$$ = $1;}
+  | lambda_def {$$ = $1;}
+  | quote_def {$$ = $1;}
+  | return_def {$$ = $1;}
+  | break_def {$$ = $1;}
+  | while_def {$$ = $1;}
+  | prog_def {$$ = $1;}
+  | cond_def {$$ = $1;}
+  | setq_def {$$ = $1;}
+  | func_call {$$ = $1;}
   ;
 
 atom:

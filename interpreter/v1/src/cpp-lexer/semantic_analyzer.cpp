@@ -204,10 +204,19 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
       if (funcdef_node->getName()->value == identifier->value) {
         funcdef_node->is_recursive = true;
 
+        shared_ptr<ASTNode> head_node = make_shared<ASTNode>(
+            LEAF, make_shared<Token>(IDENTIFIER, identifier->value,
+                                     identifier->span));
+
+        vector<shared_ptr<ASTNode>> new_args = {head_node};
+        for (auto &arg : args) {
+          new_args.push_back(arg);
+        }
+
 #ifdef DEBUG
         cout << "recursive call found" << endl;
 #endif
-        return make_shared<FuncCallNode>(identifier, args);
+        return make_shared<FuncCallNode>(head_node->head, new_args);
       }
     }
   }
@@ -299,8 +308,13 @@ shared_ptr<ASTNode> SemanticAnalyzer::inline_function(
 
       if (arg->second->node_type == LEAF &&
           arg->second->head->type == IDENTIFIER) {
-        return make_shared<FuncCallNode>(arg->second->head,
-                                         func_call->children);
+        shared_ptr<ASTNode> head_node =
+            make_shared<ASTNode>(LEAF, arg->second->head);
+        vector<shared_ptr<ASTNode>> new_args = {head_node};
+        for (auto &arg : func_call->getArgs()) {
+          new_args.push_back(arg);
+        }
+        return make_shared<FuncCallNode>(head_node->head, new_args);
       } else if (arg->second->node_type == LAMBDA) {
         auto lambda_node = static_pointer_cast<LambdaNode>(arg->second);
 
@@ -510,6 +524,10 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
 
 shared_ptr<ASTNode>
 SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
+
+  if (node->children[0]->node_type != LEAF)
+    return node;
+
   string identifier = node->getName()->value;
   Scope &scope = scope_stack.back();
 
@@ -523,7 +541,7 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
     if (func_node->node_type == FUNCDEF) {
       vector<shared_ptr<ASTNode>> args;
 
-      for (auto &child : node->children) {
+      for (auto &child : node->getArgs()) {
         args.push_back(analyze_node(child));
       }
 
@@ -764,6 +782,8 @@ shared_ptr<ASTNode> SemanticAnalyzer::calculate_node(shared_ptr<ASTNode> node) {
 #ifdef DEBUG
   cout << "calculate_node" << endl;
 #endif
+  shared_ptr<FuncCallNode> funccall = static_pointer_cast<FuncCallNode>(node);
+
   for (auto &child : node->children) {
     child = analyze_node(child);
   }
@@ -771,7 +791,7 @@ shared_ptr<ASTNode> SemanticAnalyzer::calculate_node(shared_ptr<ASTNode> node) {
   vector<shared_ptr<ASTNode>> args; // calculable arguments
   vector<shared_ptr<ASTNode>> left; // non-calculable arguments
 
-  for (auto &child : node->children) {
+  for (auto &child : funccall->getArgs()) {
     if (child->calculable())
       args.push_back(child);
     else
@@ -781,15 +801,18 @@ shared_ptr<ASTNode> SemanticAnalyzer::calculate_node(shared_ptr<ASTNode> node) {
   if (left.size() == 0) { // all arguments are calculable
     return make_shared<ASTNode>(LEAF, calculate(args, node->head->value));
   } else if (args.size() == 0) { // no arguments are calculable
+    left.insert(left.begin(), node->children[0]);
     return make_shared<FuncCallNode>(node->head, left);
   } else { // calculate calculable arguments and create new function call node
-    if (node->children[0]->calculable()) {
+    if (node->children[1]->calculable()) {
       left.insert(left.begin(), make_shared<ASTNode>(
                                     LEAF, calculate(args, node->head->value)));
     } else {
       left.push_back(
           make_shared<ASTNode>(LEAF, calculate(args, node->head->value)));
     }
+
+    left.insert(left.begin(), node->children[0]);
     return make_shared<FuncCallNode>(node->head, left);
   }
 }

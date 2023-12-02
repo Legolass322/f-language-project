@@ -115,57 +115,121 @@ void Interpreter::interpret_funcdef(shared_ptr<FuncDefNode> const &node) {
 
 shared_ptr<ASTNode>
 Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
-  auto const &name = node->getName()->value;
-  auto const &args = node->getArgs();
+  if (node->children[0]->node_type != LEAF) {
 
-  if (find(PF_FUNCS.begin(), PF_FUNCS.end(), name) != PF_FUNCS.end()) {
-    vector<shared_ptr<ASTNode>> v_args;
-    for (auto const &arg : args) {
-      v_args.push_back(interpret(arg));
+    auto head_node = interpret(node->children[0]);
+
+    stack.push_back(Scope(ASTNodeType::FUNCCALL));
+
+    switch (head_node->node_type) {
+    case ASTNodeType::FUNCDEF: {
+      auto const &name = head_node->children[0]->head;
+      interpret_funcdef(static_pointer_cast<FuncDefNode>(head_node));
+      vector<shared_ptr<ASTNode>> v_args = {
+          make_shared<ASTNode>(ASTNodeType::LEAF, name)};
+      for (auto const &arg : node->getArgs()) {
+        v_args.push_back(arg);
+      }
+      auto res = interpret_funccall(
+          make_shared<FuncCallNode>(v_args[0]->head, v_args));
+      stack.pop_back();
+      return res;
     }
-    return interpret(PF_FUNC_MAP.at(name)(v_args));
-  }
 
-  shared_ptr<ASTNode> funcdef;
+    case ASTNodeType::LAMBDA: {
+      auto const &params = head_node->children[0];
+      auto const &body = head_node->children[1];
+      auto const &args = node->getArgs();
 
-  for (int i = stack.size() - 1; i >= 0; i--) {
-    if (stack[i].variables.find(name) != stack[i].variables.end()) {
-      funcdef = stack[i][name];
-      break;
+      for (int i = 0; i < params->children.size(); i++) {
+        stack.back()[params->children[i]->head->value] = interpret(args[i]);
+      }
+
+      auto res = interpret(body);
+
+      stack.pop_back();
+
+      return res;
     }
-  }
 
-  if (funcdef->node_type != ASTNodeType::FUNCDEF &&
-      funcdef->node_type != ASTNodeType::LAMBDA) {
-    throw runtime_error(name + " is not a function");
-  }
+    case ASTNodeType::LEAF: {
+      auto const &name = head_node->head;
+      auto const &args = node->getArgs();
 
-  auto const &params = funcdef->node_type == ASTNodeType::FUNCDEF
-                           ? funcdef->children[1]
-                           : funcdef->children[0];
-  auto const &body = funcdef->node_type == ASTNodeType::FUNCDEF
-                         ? funcdef->children[2]
-                         : funcdef->children[1];
+      vector<shared_ptr<ASTNode>> v_args = {
+          make_shared<ASTNode>(ASTNodeType::LEAF, name)};
 
-  stack.push_back(Scope(ASTNodeType::FUNCCALL));
+      for (auto const &arg : args) {
+        v_args.push_back(arg);
+      }
 
-  for (int i = 0; i < params->children.size(); i++) {
-    stack.back()[params->children[i]->head->value] = interpret(args[i]);
-  }
+      auto res = interpret_funccall(
+          make_shared<FuncCallNode>(v_args[0]->head, v_args));
 
-  if (body->node_type == ASTNodeType::PROG) {
-    for (auto &child : body->children) {
-      if (child->node_type == ASTNodeType::SETQ) {
-        stack.back()[child->children[0]->head->value] = nullptr;
+      stack.pop_back();
+
+      return res;
+    }
+
+    default:
+      stack.pop_back();
+      throw runtime_error("not a function");
+    }
+
+  } else {
+
+    auto const &name = node->getName()->value;
+    auto const &args = node->getArgs();
+
+    if (find(PF_FUNCS.begin(), PF_FUNCS.end(), name) != PF_FUNCS.end()) {
+      vector<shared_ptr<ASTNode>> v_args;
+      for (auto const &arg : args) {
+        v_args.push_back(interpret(arg));
+      }
+      return interpret(PF_FUNC_MAP.at(name)(v_args));
+    }
+
+    shared_ptr<ASTNode> funcdef;
+
+    for (int i = stack.size() - 1; i >= 0; i--) {
+      if (stack[i].variables.find(name) != stack[i].variables.end()) {
+        funcdef = stack[i][name];
+        break;
       }
     }
+
+    if (funcdef->node_type != ASTNodeType::FUNCDEF &&
+        funcdef->node_type != ASTNodeType::LAMBDA) {
+      throw runtime_error(name + " is not a function");
+    }
+
+    auto const &params = funcdef->node_type == ASTNodeType::FUNCDEF
+                             ? funcdef->children[1]
+                             : funcdef->children[0];
+    auto const &body = funcdef->node_type == ASTNodeType::FUNCDEF
+                           ? funcdef->children[2]
+                           : funcdef->children[1];
+
+    stack.push_back(Scope(ASTNodeType::FUNCCALL));
+
+    for (int i = 0; i < params->children.size(); i++) {
+      stack.back()[params->children[i]->head->value] = interpret(args[i]);
+    }
+
+    if (body->node_type == ASTNodeType::PROG) {
+      for (auto &child : body->children) {
+        if (child->node_type == ASTNodeType::SETQ) {
+          stack.back()[child->children[0]->head->value] = nullptr;
+        }
+      }
+    }
+
+    shared_ptr<ASTNode> res = interpret(body);
+
+    stack.pop_back();
+
+    return res;
   }
-
-  shared_ptr<ASTNode> res = interpret(body);
-
-  stack.pop_back();
-
-  return res;
 }
 
 void Interpreter::interpret_setq(shared_ptr<SetqNode> const &node) {
