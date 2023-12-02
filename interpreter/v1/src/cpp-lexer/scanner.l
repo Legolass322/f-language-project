@@ -38,36 +38,6 @@ return {return yy::parser::make_SF_RETURN(yytext, loc);}
 setq {return yy::parser::make_SF_SETQ(yytext, loc);}
 while {return yy::parser::make_SF_WHILE(yytext, loc);}
 
-plus {return yy::parser::make_PF_PLUS(yytext, loc);}
-times {return yy::parser::make_PF_TIMES(yytext, loc);}
-divide {return yy::parser::make_PF_DIVIDE(yytext, loc);}
-minus {return yy::parser::make_PF_MINUS(yytext, loc);}
-
-head {return yy::parser::make_PF_HEAD(yytext, loc);}
-tail {return yy::parser::make_PF_TAIL(yytext, loc);}
-cons {return yy::parser::make_PF_CONS(yytext, loc);}
-
-equal {return yy::parser::make_PF_EQUAL(yytext, loc);}
-nonequal {return yy::parser::make_PF_NONEQUAL(yytext, loc);}
-less {return yy::parser::make_PF_LESS(yytext, loc);}
-lesseq {return yy::parser::make_PF_LESSEQ(yytext, loc);}
-greater {return yy::parser::make_PF_GREATER(yytext, loc);}
-greatereq {return yy::parser::make_PF_GREATEREQ(yytext, loc);}
-
-isint {return yy::parser::make_PF_ISINT(yytext, loc);}
-isreal {return yy::parser::make_PF_ISREAL(yytext, loc);}
-isbool {return yy::parser::make_PF_ISBOOL(yytext, loc);}
-isnull {return yy::parser::make_PF_ISNULL(yytext, loc);}
-isatom {return yy::parser::make_PF_ISATOM(yytext, loc);}
-islist {return yy::parser::make_PF_ISLIST(yytext, loc);}
-
-and {return yy::parser::make_PF_AND(yytext, loc);}
-or {return yy::parser::make_PF_OR(yytext, loc);}
-xor {return yy::parser::make_PF_XOR(yytext, loc);}
-not {return yy::parser::make_PF_NOT(yytext, loc);}
-
-eval {return yy::parser::make_PF_EVAL(yytext, loc);}
-
 true {return yy::parser::make_TRUE(yytext, loc);}
 false {return yy::parser::make_FALSE(yytext, loc);}
 null {return yy::parser::make_NULL(yytext, loc);}
