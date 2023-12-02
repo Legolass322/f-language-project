@@ -636,7 +636,7 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
 #ifdef DEBUG
     cout << "adding variable " << identifier << endl;
 #endif
-    scope.variables[identifier] = local;
+    scope.variables[identifier] = Var(local, 1);
   }
 
   // start from 1 to skip locals
@@ -651,25 +651,15 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
 #ifdef DEBUG
       cout << "removing variable " << it->first << endl;
 #endif
-      bool is_defined = false;
-
-      try {
-        find_variable(
-            make_shared<Token>(IDENTIFIER, it->first, node->head->span));
-        is_defined = true;
-      } catch (VariableNotFoundError &e) {
-        // Variable not found, add it to the current scope
-      }
-
-      if (!is_defined)
-        node = static_pointer_cast<ProgNode>(
-            remove_variable(node, scope_stack.back(), it->first));
+      node = static_pointer_cast<ProgNode>(
+          remove_variable(node, scope_stack.back(), it->first));
     } else if (it->second.value->node_type == FUNCDEF) {
 #ifdef DEBUG
       cout << "removing function " << it->first << endl;
 #endif
-      node = static_pointer_cast<ProgNode>(
-          remove_inlined_function(node, scope_stack.back(), it->first));
+      if (it->second.referrers == 0)
+        node = static_pointer_cast<ProgNode>(
+            remove_inlined_function(node, scope_stack.back(), it->first));
     }
   }
 
