@@ -1,5 +1,6 @@
 #include "ast.h"
 #include "interpeter.h"
+#include "utils.h"
 #include <algorithm>
 #include <iostream>
 #include <memory>
@@ -24,33 +25,68 @@ void Interpreter::eval_result(shared_ptr<ASTNode> const &node,
   if (node == nullptr)
     return;
 
-  if (node->node_type == ASTNodeType::LEAF) {
-    cout << node->head->value;
-  } else if (node->node_type == ASTNodeType::LIST) {
-    cout << "(";
-    for (int i = 0; i < node->children.size(); i++) {
-      eval_result(interpret(node->children[i]), true);
-      if (i != node->children.size() - 1)
-        cout << " ";
-    }
-    cout << ")";
-  } else if (node->node_type == ASTNodeType::QUOTE_LIST) {
-    cout << "'(";
-    for (int i = 0; i < node->children.size(); i++) {
-      eval_result(node->children[i], true);
-      if (i != node->children.size() - 1)
-        cout << " ";
-    }
-    cout << ")";
-  } else {
-    cout << "(" << node->head->value;
-    cout << " ";
-    for (int i = 0; i < node->children.size(); i++) {
-      eval_result(node->children[i], true);
-      if (i != node->children.size() - 1)
-        cout << " ";
-    }
-    cout << ")";
+  switch (node->node_type) {
+  case ASTNodeType::LIST: {
+    auto list_node = static_pointer_cast<ListNode>(node);
+    cout << *list_node.get();
+    break;
+  }
+
+  case ASTNodeType::QUOTE_LIST: {
+    cout << "'";
+    auto quote_list_node = static_pointer_cast<ListNode>(node);
+    cout << *quote_list_node.get();
+    break;
+  }
+  case ASTNodeType::FUNCDEF: {
+    auto funcdef_node = static_pointer_cast<FuncDefNode>(node);
+    cout << *funcdef_node.get();
+    break;
+  }
+  case ASTNodeType::FUNCCALL: {
+    auto funccall_node = static_pointer_cast<FuncCallNode>(node);
+    cout << *funccall_node.get();
+    break;
+  }
+  case ASTNodeType::LAMBDA: {
+    auto lambda_node = static_pointer_cast<LambdaNode>(node);
+    cout << *lambda_node.get();
+    break;
+  }
+
+  case ASTNodeType::RETURN: {
+    auto return_node = static_pointer_cast<ReturnNode>(node);
+    cout << *return_node.get();
+    break;
+  }
+
+  case ASTNodeType::COND: {
+    auto cond_node = static_pointer_cast<CondNode>(node);
+    cout << *cond_node.get();
+    break;
+  }
+
+  case ASTNodeType::WHILE: {
+    auto while_node = static_pointer_cast<WhileNode>(node);
+    cout << *while_node.get();
+    break;
+  }
+
+  case ASTNodeType::PROG: {
+    auto prog_node = static_pointer_cast<ProgNode>(node);
+    cout << *prog_node.get();
+    break;
+  }
+
+  case ASTNodeType::SETQ: {
+    auto setq_node = static_pointer_cast<SetqNode>(node);
+    cout << *setq_node.get();
+    break;
+  }
+
+  default:
+    cout << *node.get();
+    break;
   }
 }
 
@@ -198,6 +234,10 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
       }
     }
 
+    if (funcdef == nullptr) {
+      throw runtime_error(name + " is not a function");
+    }
+
     if (funcdef->node_type != ASTNodeType::FUNCDEF &&
         funcdef->node_type != ASTNodeType::LAMBDA) {
 
@@ -302,8 +342,95 @@ Interpreter::interpret_list(shared_ptr<ListNode> const &node) {
 
 shared_ptr<ASTNode>
 Interpreter::interpret_return(shared_ptr<ReturnNode> const &node) {
+
   stack.back().return_value = interpret(node->getValue());
+
+  // check for closure
+  if (stack.back().return_value->node_type == ASTNodeType::FUNCDEF) {
+    stack.back().return_value = interpret_closure(
+        static_pointer_cast<FuncDefNode>(stack.back().return_value));
+  }
+
   return stack.back().return_value;
+}
+
+shared_ptr<ASTNode>
+Interpreter::interpret_closure(shared_ptr<FuncDefNode> const &node) {
+  shared_ptr<FuncDefNode> funcdef =
+      static_pointer_cast<FuncDefNode>(node->copy());
+  vector<shared_ptr<ASTNode>> setqs;
+  vector<string> defined;
+
+  for (auto const &param : funcdef->getParams()->children) {
+    defined.push_back(param->head->value);
+  }
+
+  if (funcdef->getBody()->node_type == ASTNodeType::PROG) {
+    for (auto const &child : funcdef->getBody()->children) {
+      if (child->node_type == ASTNodeType::SETQ) {
+        auto setq_node = static_pointer_cast<SetqNode>(child);
+        defined.push_back(setq_node->getName()->value);
+      }
+    }
+  }
+
+  iterate_closure(funcdef->getBody(), setqs, defined);
+
+  if (funcdef->getBody()->node_type == ASTNodeType::PROG) {
+    auto body = static_pointer_cast<ProgNode>(funcdef->getBody());
+    body->children.insert(body->children.begin() + 1, setqs.begin(),
+                          setqs.end());
+
+    return funcdef;
+  }
+
+  vector<shared_ptr<ASTNode>> children = {make_shared<ListNode>()};
+
+  // add setqs to locals
+  for (auto const &setq : setqs) {
+    children.push_back(setq);
+    children[0]->children.push_back(
+        make_shared<ASTNode>(ASTNodeType::LEAF, setq->children[0]->head));
+  }
+
+  children.push_back(funcdef->getBody());
+
+  funcdef->setBody(make_shared<ProgNode>(
+      make_shared<Token>(TokenType::KEYWORD, "prog", Span({0, 0})), children));
+
+  generate_graph_svg(funcdef, "closure.svg");
+
+  return funcdef;
+}
+
+void Interpreter::iterate_closure(shared_ptr<ASTNode> const &node,
+                                  vector<shared_ptr<ASTNode>> &setqs,
+                                  vector<string> const &defined) {
+  if (node->node_type == ASTNodeType::LEAF) {
+    if (node->head->type == TokenType::IDENTIFIER) {
+      if (find(defined.begin(), defined.end(), node->head->value) ==
+          defined.end()) {
+        auto res = interpret_leaf(node);
+
+        if (res->head->value == node->head->value)
+          return;
+
+        vector<shared_ptr<ASTNode>> children = {
+            make_shared<ASTNode>(ASTNodeType::LEAF, node->head), res};
+
+        auto setq_node = make_shared<SetqNode>(
+            make_shared<Token>(TokenType::KEYWORD, "setq", Span({0, 0})),
+            children);
+
+        setqs.push_back(setq_node);
+        return;
+      }
+    }
+  }
+
+  for (auto const &child : node->children) {
+    iterate_closure(child, setqs, defined);
+  }
 }
 
 shared_ptr<ASTNode>
