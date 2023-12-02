@@ -275,7 +275,12 @@ func_call:
       children.push_back(e);
     }
 
-    $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
+    if ($2->node_type != ASTNodeType::LEAF) {
+      shared_ptr<Token> t = std::make_shared<Token>(TokenType::NUL, "unknown", Span({@1.begin.line, @1.begin.column}));
+      $$ = std::make_shared<FuncCallNode>(t, children);
+    } else {
+      $$ = std::make_shared<FuncCallNode>(children[0]->head, children);
+    }
   }
   ;
 

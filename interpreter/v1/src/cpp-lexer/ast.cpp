@@ -202,7 +202,12 @@ FuncCallNode::FuncCallNode(shared_ptr<Token> const &head,
                            vector<shared_ptr<ASTNode>> const &children)
     : ASTNode(FUNCCALL, head, children) {}
 
-shared_ptr<Token> FuncCallNode::getName() { return children[0]->head; }
+shared_ptr<Token> FuncCallNode::getName() {
+  if (children[0]->node_type != LEAF)
+    return head;
+
+  return children[0]->head;
+}
 vector<shared_ptr<ASTNode>> FuncCallNode::getArgs() {
   return children.size() > 1
              ? vector<shared_ptr<ASTNode>>(children.begin() + 1, children.end())

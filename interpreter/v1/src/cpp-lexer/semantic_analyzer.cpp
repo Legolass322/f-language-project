@@ -482,7 +482,7 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
 #ifdef DEBUG
     cout << "adding variable " << identifier << endl;
 #endif
-    scope.variables[identifier] = child;
+    scope.variables[identifier] = Var(child, 1);
   }
 
   node->setBody(analyze_node(node->getBody()));
@@ -495,19 +495,8 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
       cout << "removing variable " << it->first << endl;
 #endif
 
-      bool is_defined = false;
-
-      try {
-        find_variable(
-            make_shared<Token>(IDENTIFIER, it->first, node->head->span));
-        is_defined = true;
-      } catch (VariableNotFoundError &e) {
-        // Variable not found, add it to the current scope
-      }
-
-      if (!is_defined)
-        node = static_pointer_cast<FuncDefNode>(
-            remove_variable(node, scope_stack.back(), it->first));
+      node = static_pointer_cast<FuncDefNode>(
+          remove_variable(node, scope_stack.back(), it->first));
     }
   }
 

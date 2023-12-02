@@ -12,6 +12,8 @@ struct Var {
 
   Var() : value(nullptr), referrers(0) {}
   Var(shared_ptr<ASTNode> value) : value(value), referrers(0) {}
+  Var(shared_ptr<ASTNode> value, int referrers)
+      : value(value), referrers(referrers) {}
 
   Var operator=(shared_ptr<ASTNode> value) {
     this->value = value;
