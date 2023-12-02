@@ -65,22 +65,20 @@ private:
 
   shared_ptr<ASTNode> remove_variable(shared_ptr<ASTNode> node, Scope &scope,
                                       string const &identifier);
-  shared_ptr<ASTNode> remove_inlined_function(shared_ptr<ASTNode> node,
-                                              Scope &scope,
-                                              string const &identifier);
 
   shared_ptr<ASTNode> find_function(shared_ptr<Token> identifier);
 
   shared_ptr<ASTNode>
-  get_inlined_function(shared_ptr<Token> const &identifier,
+  get_inlined_function(shared_ptr<FuncDefNode> const &funcdef,
                        vector<shared_ptr<ASTNode>> const &args);
+
+  shared_ptr<FuncCallNode>
+  is_recursive_call(shared_ptr<Token> const &identifier,
+                    vector<shared_ptr<ASTNode>> const &args);
+
   shared_ptr<ASTNode>
   inline_function(shared_ptr<ASTNode> node, map<string, string> const &tmps,
                   map<string, shared_ptr<ASTNode>> const &params_to_args);
-
-  shared_ptr<ASTNode>
-  get_inlined_lambda(shared_ptr<LambdaNode> const &lambda,
-                     vector<shared_ptr<ASTNode>> const &args);
 
   shared_ptr<ASTNode> inline_require(shared_ptr<ASTNode> node);
 };

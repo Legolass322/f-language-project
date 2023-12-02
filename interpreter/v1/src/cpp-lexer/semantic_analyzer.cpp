@@ -133,11 +133,17 @@ SemanticAnalyzer::remove_variable(shared_ptr<ASTNode> node, Scope &scope,
                                   string const &identifier) {
   auto variable = scope.variables.find(identifier);
 
-  if (variable != scope.variables.end() && variable->second.referrers == 0) {
+  if (variable != scope.variables.end()) {
     for (int i = 0; i < node->children.size(); ++i) {
       if (node->children[i]->node_type == SETQ) {
         auto setq_node = static_pointer_cast<SetqNode>(node->children[i]);
         if (setq_node->getName()->value == identifier) {
+          node->children.erase(node->children.begin() + i);
+          return node;
+        }
+      } else if (node->children[i]->node_type == FUNCDEF) {
+        auto funcdef_node = static_pointer_cast<FuncDefNode>(node->children[i]);
+        if (funcdef_node->getName()->value == identifier) {
           node->children.erase(node->children.begin() + i);
           return node;
         }
@@ -151,53 +157,9 @@ SemanticAnalyzer::remove_variable(shared_ptr<ASTNode> node, Scope &scope,
   throw VariableNotFoundError(node->head->span, identifier);
 }
 
-shared_ptr<ASTNode> SemanticAnalyzer::remove_inlined_function(
-    shared_ptr<ASTNode> node, Scope &scope, string const &identifier) {
-  auto variable = scope.variables.find(identifier);
-
-  if (variable != scope.variables.end()) {
-    for (int i = 0; i < node->children.size(); ++i) {
-      if (node->children[i]->node_type == FUNCDEF) {
-        auto funcdef_node = static_pointer_cast<FuncDefNode>(node->children[i]);
-        if (funcdef_node->getName()->value == identifier) {
-          if (funcdef_node->is_recursive)
-            return node;
-
-          node->children.erase(node->children.begin() + i);
-          return node;
-        }
-      }
-    }
-  }
-
-#ifdef DEBUG
-  cout << "error in remove func" << identifier << endl;
-#endif
-
-  throw VariableNotFoundError(node->head->span, identifier);
-}
-
-shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
-    shared_ptr<Token> const &identifier,
-    vector<shared_ptr<ASTNode>> const &args) {
-  shared_ptr<FuncDefNode> func_copy =
-      static_pointer_cast<FuncDefNode>(find_variable(identifier).value->copy());
-  shared_ptr<ASTNode> node_body = func_copy->getBody();
-  vector<shared_ptr<ASTNode>> params = func_copy->getParams()->children;
-  map<string, string> tmps;
-  map<string, shared_ptr<ASTNode>> params_to_args;
-  vector<shared_ptr<ASTNode>> add_to_body_locals;
-
-  // check if number of arguments match number of parameters
-  if (args.size() != params.size())
-    throw WrongNumberOfArgumentsError(func_copy->head->span, identifier->value,
-                                      params.size(), args.size());
-
-#ifdef DEBUG
-  cout << "get_inlined_function" << endl;
-#endif
-
-  // check for recursive calls
+shared_ptr<FuncCallNode>
+SemanticAnalyzer::is_recursive_call(shared_ptr<Token> const &identifier,
+                                    vector<shared_ptr<ASTNode>> const &args) {
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
     if (it->scope_node->node_type == FUNCDEF) {
       auto funcdef_node = static_pointer_cast<FuncDefNode>(it->scope_node);
@@ -221,6 +183,41 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
     }
   }
 
+  return nullptr;
+}
+
+shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
+    shared_ptr<FuncDefNode> const &funcdef,
+    vector<shared_ptr<ASTNode>> const &args) {
+  shared_ptr<ASTNode> node_body = funcdef->getBody();
+  vector<shared_ptr<ASTNode>> params = funcdef->getParams()->children;
+
+  map<string, string> tmps; // map parameters to tmp variables
+
+  map<string, shared_ptr<ASTNode>> params_to_args; // map parameters to
+                                                   // arguments
+
+  vector<shared_ptr<ASTNode>> body_locals; // variables that should be
+                                           // added to the body locals
+                                           // list
+
+  // check if number of arguments match number of parameters
+  if (args.size() != params.size())
+    throw WrongNumberOfArgumentsError(funcdef->head->span, funcdef->head->value,
+                                      params.size(), args.size());
+
+#ifdef DEBUG
+  cout << "get_inlined_function" << endl;
+#endif
+
+  // check for recursive calls
+  shared_ptr<FuncCallNode> recursive_call =
+      is_recursive_call(funcdef->getName(), args);
+
+  if (recursive_call != nullptr) {
+    return recursive_call;
+  }
+
   // create tmp variables for each parameter
   for (int i = 0; i < params.size(); i++) {
     string tmp = "_tmp" + to_string(++tmp_counter);
@@ -234,20 +231,23 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
     child = inline_function(child, tmps, params_to_args);
     if (child->node_type == SETQ) {
       auto setq_node = static_pointer_cast<SetqNode>(child);
-      add_to_body_locals.push_back(
-          make_shared<ASTNode>(LEAF, setq_node->getName()));
+      body_locals.push_back(make_shared<ASTNode>(LEAF, setq_node->getName()));
     }
   }
 
   // create setq nodes for each parameter
   vector<shared_ptr<ASTNode>> setqs;
   vector<shared_ptr<ASTNode>> locals;
+
+  // add tmp variables to locals list
   for (auto it = tmps.begin(); it != tmps.end(); ++it) {
     locals.push_back(make_shared<ASTNode>(
-        LEAF, make_shared<Token>(IDENTIFIER, it->second, identifier->span)));
+        LEAF, make_shared<Token>(IDENTIFIER, it->second, funcdef->head->span)));
   }
+
   setqs.push_back(make_shared<ListNode>(locals));
 
+  // create setq node for each parameter
   for (int i = 0; i < args.size(); i++) {
     if (tmps.find(params[i]->head->value) == tmps.end())
       continue;
@@ -266,8 +266,8 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
     body_children.push_back(setq);
   }
 
-  if (add_to_body_locals.size() > 0 && node_body->node_type == PROG) {
-    node_body->children[0] = make_shared<ListNode>(add_to_body_locals);
+  if (body_locals.size() > 0 && node_body->node_type == PROG) {
+    node_body->children[0] = make_shared<ListNode>(body_locals);
   }
 
   body_children.push_back(node_body);
@@ -297,93 +297,12 @@ shared_ptr<ASTNode> SemanticAnalyzer::inline_function(
             make_shared<Token>(IDENTIFIER, tmp->second, node->head->span));
       }
     }
-  } else if (node->node_type == FUNCCALL) { // if argument is a function
-    auto func_call = static_pointer_cast<FuncCallNode>(node);
-    auto arg = params_to_args.find(func_call->getName()->value);
-    if (arg != params_to_args.end()) {
-#ifdef DEBUG
-      cout << "replacing " << func_call->getName()->value << " with "
-           << arg->second->head->value << endl;
-#endif
-
-      if (arg->second->node_type == LEAF &&
-          arg->second->head->type == IDENTIFIER) {
-        shared_ptr<ASTNode> head_node =
-            make_shared<ASTNode>(LEAF, arg->second->head);
-        vector<shared_ptr<ASTNode>> new_args = {head_node};
-        for (auto &arg : func_call->getArgs()) {
-          new_args.push_back(arg);
-        }
-        return make_shared<FuncCallNode>(head_node->head, new_args);
-      } else if (arg->second->node_type == LAMBDA) {
-        auto lambda_node = static_pointer_cast<LambdaNode>(arg->second);
-
-        return get_inlined_lambda(lambda_node, func_call->getArgs());
-      }
-    }
   }
-
   for (auto &child : node->children) {
     child = inline_function(child, tmps, params_to_args);
   }
 
   return node;
-}
-
-shared_ptr<ASTNode>
-SemanticAnalyzer::get_inlined_lambda(shared_ptr<LambdaNode> const &lambda,
-                                     vector<shared_ptr<ASTNode>> const &args) {
-  shared_ptr<LambdaNode> lambda_copy =
-      static_pointer_cast<LambdaNode>(lambda->copy());
-  shared_ptr<ASTNode> node_body = lambda_copy->getBody();
-  vector<shared_ptr<ASTNode>> params = lambda_copy->getParams()->children;
-  map<string, string> tmps;
-  map<string, shared_ptr<ASTNode>> params_to_args;
-
-  // check if number of arguments match number of parameters
-  if (args.size() != params.size())
-    throw WrongNumberOfArgumentsError(lambda->head->span, "lambda",
-                                      params.size(), args.size());
-
-  // create tmp variables for each parameter
-  for (int i = 0; i < params.size(); i++) {
-    string tmp = "_tmp" + to_string(++tmp_counter);
-
-    tmps[params[i]->head->value] = tmp;
-    params_to_args[params[i]->head->value] = args[i];
-  }
-
-  for (auto &child : node_body->children) {
-    child = inline_function(child, tmps, params_to_args);
-  }
-
-  // create setq nodes for each parameter
-  vector<shared_ptr<ASTNode>> setqs;
-  vector<shared_ptr<ASTNode>> locals;
-  for (auto it = tmps.begin(); it != tmps.end(); ++it) {
-    locals.push_back(make_shared<ASTNode>(
-        LEAF, make_shared<Token>(IDENTIFIER, it->second, lambda->head->span)));
-  }
-  setqs.push_back(make_shared<ListNode>(locals));
-
-  for (int i = 0; i < args.size(); i++) {
-    vector<shared_ptr<ASTNode>> setq_children = {
-        make_shared<ASTNode>(
-            LEAF, make_shared<Token>(IDENTIFIER, tmps[params[i]->head->value],
-                                     params[i]->head->span)),
-        args[i]};
-    setqs.push_back(make_shared<SetqNode>(params[i]->head, setq_children));
-  }
-
-  vector<shared_ptr<ASTNode>> body_children;
-
-  for (auto &setq : setqs) {
-    body_children.push_back(setq);
-  }
-
-  body_children.push_back(node_body);
-
-  return make_shared<ProgNode>(node_body->head, body_children);
 }
 
 shared_ptr<ASTNode>
@@ -534,7 +453,9 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
         args.push_back(analyze_node(child));
       }
 
-      return get_inlined_function(node->getName(), args);
+      shared_ptr<FuncDefNode> funcdef =
+          static_pointer_cast<FuncDefNode>(func_node->copy());
+      return get_inlined_function(funcdef, args);
     }
 
   } catch (FunctionNotFoundError &e) {
@@ -649,17 +570,10 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_prog(shared_ptr<ProgNode> node) {
        it != scope_stack.back().variables.rend(); ++it) {
     if (it->second.referrers == 0) {
 #ifdef DEBUG
-      cout << "removing variable " << it->first << endl;
+      cout << "removing variable in prog " << it->first << endl;
 #endif
       node = static_pointer_cast<ProgNode>(
           remove_variable(node, scope_stack.back(), it->first));
-    } else if (it->second.value->node_type == FUNCDEF) {
-#ifdef DEBUG
-      cout << "removing function " << it->first << endl;
-#endif
-      if (it->second.referrers == 0)
-        node = static_pointer_cast<ProgNode>(
-            remove_inlined_function(node, scope_stack.back(), it->first));
     }
   }
 
@@ -672,20 +586,31 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_setq(shared_ptr<SetqNode> node) {
   cout << "analyze_setq" << endl;
 #endif
   string identifier = node->getName()->value;
-  Scope &scope = scope_stack.back();
+
+  string debug_cout = "updating variable " + identifier;
+
+  node->setValue(analyze_node(node->getValue()));
 
   try {
     find_variable(node->getName());
   } catch (VariableNotFoundError &e) {
     // Variable not found, add it to the current scope
+    debug_cout = "successfully added variable " + identifier;
+    scope_stack.back().variables[identifier] = Var(node->getValue(), 0);
   }
 
 #ifdef DEBUG
-  cout << "successfully added variable " << identifier << endl;
+  cout << debug_cout << endl;
 #endif
-  scope.variables[identifier] = node;
 
-  node->setValue(analyze_node(node->getValue()));
+  for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
+    auto variable = it->variables.find(identifier);
+    if (variable != it->variables.end()) {
+      variable->second.value = node->getValue();
+      return node;
+    }
+  }
+
   return node;
 }
 

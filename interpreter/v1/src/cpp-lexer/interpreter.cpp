@@ -200,6 +200,20 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
 
     if (funcdef->node_type != ASTNodeType::FUNCDEF &&
         funcdef->node_type != ASTNodeType::LAMBDA) {
+
+      if (funcdef->node_type == ASTNodeType::LEAF &&
+          funcdef->head->type == TokenType::IDENTIFIER) {
+        vector<shared_ptr<ASTNode>> v_args = {
+            make_shared<ASTNode>(ASTNodeType::LEAF, funcdef->head)};
+
+        for (auto const &arg : args) {
+          v_args.push_back(arg);
+        }
+
+        return interpret_funccall(
+            make_shared<FuncCallNode>(v_args[0]->head, v_args));
+      }
+
       throw runtime_error(name + " is not a function");
     }
 
