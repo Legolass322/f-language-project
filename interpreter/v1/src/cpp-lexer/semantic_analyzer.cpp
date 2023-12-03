@@ -482,7 +482,15 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
         vector<shared_ptr<ASTNode>> v_args;
 
         for (auto &child : node->getArgs()) {
-          v_args.push_back(analyze_node(child));
+          if (child->node_type == LEAF && child->head->type == IDENTIFIER) {
+            auto result = find_variable(child->head).value;
+            while (result->node_type == LEAF &&
+                   result->head->type == IDENTIFIER)
+              result = find_variable(result->head).value;
+
+            v_args.push_back(result);
+          } else
+            v_args.push_back(analyze_node(child));
         }
 
         if (v_args.size() != 1)

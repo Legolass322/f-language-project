@@ -154,11 +154,9 @@ int main(int argc, char *argv[]) {
           generate_graph_svg(drv.ast, "repl.svg");
           interpreter.interpret(drv.ast);
         } catch (std::exception &e) {
-          std::cout << e.what() << '\n';
+          std::wcout << e.what() << '\n';
           semantic_analyzer.clear_stack(drv.ast);
         }
-
-        std::cout << '\n';
       }
     } else if (!drv.parse(argv[i])) {
       std::cout << "Parsing successful" << '\n';

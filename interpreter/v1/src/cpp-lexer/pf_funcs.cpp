@@ -123,7 +123,7 @@ shared_ptr<ASTNode> pf_println(vector<shared_ptr<ASTNode>> &args) {
       print_func(arg);
   }
 
-  cout << endl;
+  wcout << endl;
 
   return nullptr;
 }
@@ -148,20 +148,20 @@ bool is_string(shared_ptr<ASTNode> const &node) {
 
 void print_string(shared_ptr<ASTNode> const &node) {
   for (auto &arg : node->children)
-    cout << arg->head->value;
+    wcout << arg->head->value.c_str();
 
-  cout << ' ';
+  wcout << ' ';
 }
 
 void print_func(shared_ptr<ASTNode> const &node) {
   if (node->node_type == ASTNodeType::LEAF)
-    cout << node->head->value << ' ';
+    wcout << node->head->value.c_str() << ' ';
   else if (node->node_type == ASTNodeType::LIST ||
            node->node_type == ASTNodeType::QUOTE_LIST) {
-    cout << "'( ";
+    wcout << "'( ";
     for (auto &arg : node->children)
       print_func(arg);
-    cout << ") ";
+    wcout << ") ";
   } else
     throw RuntimeError(node->head->span,
                        "println: invalid argument type " + node->head->value);
