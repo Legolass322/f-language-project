@@ -1,4 +1,10 @@
+#ifndef SEMANTIC_ANALYZER_H
+#define SEMANTIC_ANALYZER_H
+
 #include "ast.h"
+#include "driver.hh"
+#include <algorithm>
+#include <iostream>
 #include <map>
 #include <memory>
 
@@ -131,3 +137,5 @@ public:
                                to_string(expected) + " arguments, got " +
                                to_string(got)) {}
 };
+
+#endif

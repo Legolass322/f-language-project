@@ -1,9 +1,4 @@
 #include "semantic_analyzer.h"
-#include "ast.h"
-#include "driver.hh"
-#include <algorithm>
-#include <iostream>
-#include <memory>
 
 // #define DEBUG
 
@@ -288,7 +283,7 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
   body_children.push_back(node_body);
 
   // mark function as inlined if it is not the main scope
-  if (scope_stack.size() > 1)
+  if (scope_stack.size() > 1 && !funcdef->is_recursive)
     mark_inlined_function(funcdef->getName());
 
   return make_shared<ProgNode>(node_body->head, body_children);

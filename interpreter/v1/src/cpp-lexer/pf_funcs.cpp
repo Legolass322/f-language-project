@@ -1,9 +1,4 @@
 #include "pf_funcs.h"
-#include "ast.h"
-#include "semantic_analyzer.h"
-#include <algorithm>
-#include <cmath>
-#include <iostream>
 
 shared_ptr<ASTNode> pf_plus(vector<shared_ptr<ASTNode>> &args) {
   double result = 0;

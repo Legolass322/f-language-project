@@ -1,11 +1,5 @@
 #include "ast.h"
 
-#include <graphviz/cgraph.h>
-#include <graphviz/gvc.h>
-#include <iostream>
-#include <memory>
-#include <string>
-
 using namespace flang;
 
 Token::Token() : type(NUL), value(""), span(Span({0, 0})) {}
@@ -27,7 +21,12 @@ ASTNode::ASTNode(ASTNodeType node_type, shared_ptr<Token> const &head,
 
 ASTNode::ASTNode() {}
 
-ASTNode::~ASTNode() {}
+ASTNode::~ASTNode() {
+  for (auto child : children) {
+    child.reset();
+  }
+  children.clear();
+}
 
 shared_ptr<ASTNode> ASTNode::copy() {
   vector<shared_ptr<ASTNode>> children_copy;
@@ -177,7 +176,7 @@ shared_ptr<ASTNode> FuncDefNode::copy() {
     children_copy.push_back(child->copy());
   }
 
-  return make_shared<FuncDefNode>(head, children_copy);
+  return make_shared<FuncDefNode>(head, children_copy, is_recursive);
 }
 
 void FuncDefNode::print(shared_ptr<Agraph_t> const &graph) {

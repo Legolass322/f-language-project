@@ -1,18 +1,13 @@
-#include "ast.h"
 #include "interpeter.h"
-#include "utils.h"
-#include <algorithm>
-#include <iostream>
-#include <memory>
 
 using namespace interp;
 
-Scope::Scope() {}
+interp::Scope::Scope() {}
 
-Scope::Scope(ASTNodeType scope_type)
+interp::Scope::Scope(ASTNodeType scope_type)
     : scope_type(scope_type), return_value(nullptr), break_flag(false) {}
 
-shared_ptr<ASTNode> &Scope::operator[](string const &key) {
+shared_ptr<ASTNode> &interp::Scope::operator[](string const &key) {
   return variables[key];
 }
 

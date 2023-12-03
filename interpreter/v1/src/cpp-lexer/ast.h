@@ -1,7 +1,9 @@
 #ifndef AST_H
 #define AST_H
 
+#include <graphviz/cgraph.h>
 #include <graphviz/gvc.h>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>

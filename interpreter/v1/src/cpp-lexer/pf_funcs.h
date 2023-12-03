@@ -1,4 +1,11 @@
+#ifndef PF_FUNCS_H
+#define PF_FUNCS_H
+
 #include "ast.h"
+#include "semantic_analyzer.h"
+#include <algorithm>
+#include <cmath>
+#include <iostream>
 #include <memory>
 
 using namespace flang;
@@ -34,3 +41,5 @@ shared_ptr<ASTNode> pf_println(vector<shared_ptr<ASTNode>> &args);
 void print_func(shared_ptr<ASTNode> const &node);
 void print_string(shared_ptr<ASTNode> const &node);
 bool is_string(shared_ptr<ASTNode> const &node);
+
+#endif

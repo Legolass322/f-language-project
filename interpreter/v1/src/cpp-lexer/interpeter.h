@@ -1,6 +1,13 @@
+#ifndef INTERPRETER_H
+#define INTERPRETER_H
+
 #include "ast.h"
 #include "pf_funcs.h"
+#include "utils.h"
+#include <algorithm>
+#include <iostream>
 #include <map>
+#include <memory>
 #include <string>
 
 using namespace flang;
@@ -86,3 +93,5 @@ private:
 };
 
 } // namespace interp
+
+#endif
