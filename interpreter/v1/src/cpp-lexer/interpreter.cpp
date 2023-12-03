@@ -4,8 +4,9 @@ using namespace interp;
 
 interp::Scope::Scope() {}
 
-interp::Scope::Scope(ASTNodeType scope_type)
-    : scope_type(scope_type), return_value(nullptr), break_flag(false) {}
+interp::Scope::Scope(ASTNodeType scope_type, bool inlined)
+    : scope_type(scope_type), return_value(nullptr), break_flag(false),
+      inlined(inlined) {}
 
 shared_ptr<ASTNode> &interp::Scope::operator[](string const &key) {
   return variables[key];
@@ -94,8 +95,7 @@ shared_ptr<ASTNode> Interpreter::interpret(shared_ptr<ASTNode> const &node) {
     interpret_program(node);
     break;
   case ASTNodeType::FUNCDEF:
-    interpret_funcdef(static_pointer_cast<FuncDefNode>(node));
-    break;
+    return interpret_funcdef(static_pointer_cast<FuncDefNode>(node));
   case ASTNodeType::FUNCCALL:
     return interpret_funccall(static_pointer_cast<FuncCallNode>(node));
   case ASTNodeType::LAMBDA:
@@ -139,9 +139,12 @@ void Interpreter::interpret_program(shared_ptr<ASTNode> const &node) {
   eval_result(interpret(node->children.back()));
 }
 
-void Interpreter::interpret_funcdef(shared_ptr<FuncDefNode> const &node) {
+shared_ptr<ASTNode>
+Interpreter::interpret_funcdef(shared_ptr<FuncDefNode> const &node) {
   auto const &name = node->getName()->value;
-  stack.back()[name] = node;
+  stack.back()[name] = interpret_func_closure(node);
+
+  return stack.back()[name];
 }
 
 shared_ptr<ASTNode>
@@ -290,6 +293,10 @@ void Interpreter::interpret_setq(shared_ptr<SetqNode> const &node) {
       stack[i][name] = interpret(value);
       return;
     }
+
+    if (stack[i].inlined) {
+      break;
+    }
   }
 
   stack.back()[name] = interpret(value);
@@ -320,7 +327,7 @@ void Interpreter::interpret_while(shared_ptr<WhileNode> const &node) {
 
 shared_ptr<ASTNode>
 Interpreter::interpret_lambda(shared_ptr<LambdaNode> const &node) {
-  return node;
+  return interpret_lambda_closure(node);
 }
 
 shared_ptr<ASTNode>
@@ -340,17 +347,59 @@ Interpreter::interpret_return(shared_ptr<ReturnNode> const &node) {
 
   stack.back().return_value = interpret(node->getValue());
 
-  // check for closure
-  if (stack.back().return_value->node_type == ASTNodeType::FUNCDEF) {
-    stack.back().return_value = interpret_closure(
-        static_pointer_cast<FuncDefNode>(stack.back().return_value));
-  }
-
   return stack.back().return_value;
 }
 
 shared_ptr<ASTNode>
-Interpreter::interpret_closure(shared_ptr<FuncDefNode> const &node) {
+Interpreter::interpret_lambda_closure(shared_ptr<LambdaNode> const &node) {
+  shared_ptr<LambdaNode> lambda = static_pointer_cast<LambdaNode>(node->copy());
+  vector<shared_ptr<ASTNode>> setqs;
+  vector<string> defined;
+
+  for (auto const &param : lambda->getParams()->children) {
+    defined.push_back(param->head->value);
+  }
+
+  if (lambda->getBody()->node_type == ASTNodeType::PROG) {
+    for (auto const &child : lambda->getBody()->children) {
+      if (child->node_type == ASTNodeType::SETQ) {
+        auto setq_node = static_pointer_cast<SetqNode>(child);
+        defined.push_back(setq_node->getName()->value);
+      }
+    }
+  }
+
+  iterate_closure(lambda->getBody(), setqs, defined);
+
+  if (lambda->getBody()->node_type == ASTNodeType::PROG) {
+    auto body = static_pointer_cast<ProgNode>(lambda->getBody());
+    body->children.insert(body->children.begin() + 1, setqs.begin(),
+                          setqs.end());
+
+    return lambda;
+  }
+
+  vector<shared_ptr<ASTNode>> children = {make_shared<ListNode>()};
+
+  // add setqs to locals
+  for (auto const &setq : setqs) {
+    children.push_back(setq);
+    children[0]->children.push_back(
+        make_shared<ASTNode>(ASTNodeType::LEAF, setq->children[0]->head));
+  }
+
+  children.push_back(lambda->getBody());
+
+  lambda->setBody(make_shared<ProgNode>(
+      make_shared<Token>(TokenType::KEYWORD, "prog", Span({0, 0})), children));
+
+  generate_graph_svg(lambda, "closure.svg");
+
+  return lambda;
+}
+
+shared_ptr<ASTNode>
+Interpreter::interpret_func_closure(shared_ptr<FuncDefNode> const &node) {
   shared_ptr<FuncDefNode> funcdef =
       static_pointer_cast<FuncDefNode>(node->copy());
   vector<shared_ptr<ASTNode>> setqs;
@@ -444,7 +493,7 @@ Interpreter::interpret_cond(shared_ptr<CondNode> const &node) {
 
 shared_ptr<ASTNode>
 Interpreter::interpret_prog(shared_ptr<ProgNode> const &node) {
-  stack.push_back(Scope(ASTNodeType::PROG));
+  stack.push_back(Scope(ASTNodeType::PROG, node->is_inlined));
 
   for (auto &loc : node->getLocals()->children) {
     stack.back()[loc->head->value] = nullptr;

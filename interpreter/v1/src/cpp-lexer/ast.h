@@ -181,13 +181,15 @@ public:
 
 class ProgNode : public ASTNode {
 public:
+  bool is_inlined;
   shared_ptr<ASTNode> getLocals();
 
   void setLocals(shared_ptr<ASTNode> const &locals);
 
   ProgNode();
   ProgNode(shared_ptr<Token> const &head,
-           vector<shared_ptr<ASTNode>> const &children);
+           vector<shared_ptr<ASTNode>> const &children,
+           bool is_inlined = false);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
   shared_ptr<ASTNode> copy() override;

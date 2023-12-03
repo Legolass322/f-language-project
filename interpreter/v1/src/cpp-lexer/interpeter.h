@@ -19,9 +19,10 @@ struct Scope {
   shared_ptr<ASTNode> return_value;
   ASTNodeType scope_type;
   bool break_flag;
+  bool inlined;
 
   Scope();
-  Scope(ASTNodeType scope_type);
+  Scope(ASTNodeType scope_type, bool inlined = false);
 
   shared_ptr<ASTNode> &operator[](string const &key);
 };
@@ -71,7 +72,6 @@ private:
   vector<Scope> stack;
 
   void interpret_program(shared_ptr<ASTNode> const &node);
-  void interpret_funcdef(shared_ptr<FuncDefNode> const &node);
   void interpret_setq(shared_ptr<SetqNode> const &node);
   void interpret_break(shared_ptr<ASTNode> const &node);
   void interpret_while(shared_ptr<WhileNode> const &node);
@@ -83,8 +83,12 @@ private:
   shared_ptr<ASTNode> interpret_cond(shared_ptr<CondNode> const &node);
   shared_ptr<ASTNode> interpret_prog(shared_ptr<ProgNode> const &node);
   shared_ptr<ASTNode> interpret_leaf(shared_ptr<ASTNode> const &node);
+  shared_ptr<ASTNode> interpret_funcdef(shared_ptr<FuncDefNode> const &node);
 
-  shared_ptr<ASTNode> interpret_closure(shared_ptr<FuncDefNode> const &node);
+  shared_ptr<ASTNode>
+  interpret_func_closure(shared_ptr<FuncDefNode> const &node);
+  shared_ptr<ASTNode>
+  interpret_lambda_closure(shared_ptr<LambdaNode> const &node);
   void iterate_closure(shared_ptr<ASTNode> const &node,
                        vector<shared_ptr<ASTNode>> &setqs,
                        vector<string> const &defined);

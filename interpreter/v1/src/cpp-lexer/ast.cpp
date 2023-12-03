@@ -449,8 +449,10 @@ void WhileNode::print(shared_ptr<Agraph_t> const &graph) {
 ProgNode::ProgNode() {}
 
 ProgNode::ProgNode(shared_ptr<Token> const &head,
-                   vector<shared_ptr<ASTNode>> const &children)
-    : ASTNode(PROG, head, children) {}
+                   vector<shared_ptr<ASTNode>> const &children, bool is_inlined)
+    : ASTNode(PROG, head, children) {
+  this->is_inlined = is_inlined;
+}
 
 shared_ptr<ASTNode> ProgNode::getLocals() { return children[0]; }
 
@@ -460,12 +462,13 @@ shared_ptr<ASTNode> ProgNode::copy() {
     children_copy.push_back(child->copy());
   }
 
-  return make_shared<ProgNode>(head, children_copy);
+  return make_shared<ProgNode>(head, children_copy, is_inlined);
 }
 
 void ProgNode::print(shared_ptr<Agraph_t> const &graph) {
   this->graph_node = shared_ptr<Agnode_t>(agnode(graph.get(), NULL, TRUE));
-  string label = "ProgNode\n";
+  string inlined = is_inlined ? "inlined" : "";
+  string label = "ProgNode\n" + inlined;
   agsafeset(graph_node.get(), (char *)"label", label.c_str(), (char *)"");
 
   shared_ptr<ASTNode> locals = getLocals();

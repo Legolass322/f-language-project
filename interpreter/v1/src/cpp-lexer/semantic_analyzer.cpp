@@ -286,7 +286,7 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
   if (scope_stack.size() > 1 && !funcdef->is_recursive)
     mark_inlined_function(funcdef->getName());
 
-  return make_shared<ProgNode>(node_body->head, body_children);
+  return make_shared<ProgNode>(node_body->head, body_children, true);
 }
 
 shared_ptr<ASTNode> SemanticAnalyzer::inline_function(
@@ -419,26 +419,6 @@ SemanticAnalyzer::analyze_funcdef(shared_ptr<FuncDefNode> node) {
   }
 
   node->setBody(analyze_node(node->getBody()));
-
-  // remove variables that has 0 referrers
-  for (auto it = scope_stack.back().variables.rbegin();
-       it != scope_stack.back().variables.rend(); ++it) {
-    if (it->second.referrers == 0) {
-#ifdef DEBUG
-      cout << "removing variable " << it->first << endl;
-#endif
-
-      node = static_pointer_cast<FuncDefNode>(
-          remove_variable(node, scope_stack.back(), it->first));
-    } else if (it->second.value->node_type == FUNCDEF) {
-      auto funcdef_node = static_pointer_cast<FuncDefNode>(it->second.value);
-
-      if (funcdef_node->is_inlined) {
-        node = static_pointer_cast<FuncDefNode>(
-            remove_variable(node, scope_stack.back(), it->first));
-      }
-    }
-  }
 
   scope_stack.pop_back();
 
