@@ -24,65 +24,69 @@ void Interpreter::eval_result(shared_ptr<ASTNode> const &node,
   switch (node->node_type) {
   case ASTNodeType::LIST: {
     auto list_node = static_pointer_cast<ListNode>(node);
-    cout << *list_node.get();
+    wcout << *list_node.get();
     break;
   }
 
   case ASTNodeType::QUOTE_LIST: {
-    cout << "'";
+    wcout << "'";
     auto quote_list_node = static_pointer_cast<ListNode>(node);
-    cout << *quote_list_node.get();
+    wcout << *quote_list_node.get();
     break;
   }
   case ASTNodeType::FUNCDEF: {
     auto funcdef_node = static_pointer_cast<FuncDefNode>(node);
-    cout << *funcdef_node.get();
+    wcout << *funcdef_node.get();
     break;
   }
   case ASTNodeType::FUNCCALL: {
     auto funccall_node = static_pointer_cast<FuncCallNode>(node);
-    cout << *funccall_node.get();
+    wcout << *funccall_node.get();
     break;
   }
   case ASTNodeType::LAMBDA: {
     auto lambda_node = static_pointer_cast<LambdaNode>(node);
-    cout << *lambda_node.get();
+    wcout << *lambda_node.get();
     break;
   }
 
   case ASTNodeType::RETURN: {
     auto return_node = static_pointer_cast<ReturnNode>(node);
-    cout << *return_node.get();
+    wcout << *return_node.get();
     break;
   }
 
   case ASTNodeType::COND: {
     auto cond_node = static_pointer_cast<CondNode>(node);
-    cout << *cond_node.get();
+    wcout << *cond_node.get();
     break;
   }
 
   case ASTNodeType::WHILE: {
     auto while_node = static_pointer_cast<WhileNode>(node);
-    cout << *while_node.get();
+    wcout << *while_node.get();
     break;
   }
 
   case ASTNodeType::PROG: {
     auto prog_node = static_pointer_cast<ProgNode>(node);
-    cout << *prog_node.get();
+    wcout << *prog_node.get();
     break;
   }
 
   case ASTNodeType::SETQ: {
     auto setq_node = static_pointer_cast<SetqNode>(node);
-    cout << *setq_node.get();
+    wcout << *setq_node.get();
     break;
   }
 
   default:
-    cout << *node.get();
+    wcout << *node.get();
     break;
+  }
+
+  if (!is_recursive) {
+    wcout << endl;
   }
 }
 

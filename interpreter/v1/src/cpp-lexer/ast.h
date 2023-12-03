@@ -216,17 +216,17 @@ shared_ptr<Token> calculate(vector<shared_ptr<ASTNode>> const &args,
 
 // overload cout
 
-ostream &operator<<(ostream &os, const Token &token);
-ostream &operator<<(ostream &os, const ASTNode &node);
-ostream &operator<<(ostream &os, const FuncDefNode &node);
-ostream &operator<<(ostream &os, const FuncCallNode &node);
-ostream &operator<<(ostream &os, const LambdaNode &node);
-ostream &operator<<(ostream &os, const ListNode &node);
-ostream &operator<<(ostream &os, const ReturnNode &node);
-ostream &operator<<(ostream &os, const CondNode &node);
-ostream &operator<<(ostream &os, const WhileNode &node);
-ostream &operator<<(ostream &os, const ProgNode &node);
-ostream &operator<<(ostream &os, const SetqNode &node);
+wostream &operator<<(wostream &os, const Token &token);
+wostream &operator<<(wostream &os, const ASTNode &node);
+wostream &operator<<(wostream &os, const FuncDefNode &node);
+wostream &operator<<(wostream &os, const FuncCallNode &node);
+wostream &operator<<(wostream &os, const LambdaNode &node);
+wostream &operator<<(wostream &os, const ListNode &node);
+wostream &operator<<(wostream &os, const ReturnNode &node);
+wostream &operator<<(wostream &os, const CondNode &node);
+wostream &operator<<(wostream &os, const WhileNode &node);
+wostream &operator<<(wostream &os, const ProgNode &node);
+wostream &operator<<(wostream &os, const SetqNode &node);
 
 } // namespace flang
 

@@ -1,4 +1,5 @@
 #include "semantic_analyzer.h"
+#include "pf_funcs.h"
 
 // #define DEBUG
 
@@ -477,6 +478,18 @@ SemanticAnalyzer::analyze_funccall(shared_ptr<FuncCallNode> node) {
       if (identifier == "plus" || identifier == "minus" ||
           identifier == "times" || identifier == "divide") {
         return calculate_node(node);
+      } else if (identifier == "eval") {
+        vector<shared_ptr<ASTNode>> v_args;
+
+        for (auto &child : node->getArgs()) {
+          v_args.push_back(analyze_node(child));
+        }
+
+        if (v_args.size() != 1)
+          throw WrongNumberOfArgumentsError(node->head->span, identifier, 1,
+                                            v_args.size());
+
+        return analyze_node(pf_eval(v_args));
       }
     }
   }

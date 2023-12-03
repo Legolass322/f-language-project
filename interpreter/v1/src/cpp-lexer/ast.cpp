@@ -8,16 +8,11 @@ Token::Token(TokenType type, string value, Span span)
     : type(type), value(value), span(span) {}
 
 ASTNode::ASTNode(ASTNodeType node_type, shared_ptr<Token> const &head)
-    : node_type(node_type), head(head) {
-  this->head = head;
-}
+    : node_type(node_type), head(head) {}
 
 ASTNode::ASTNode(ASTNodeType node_type, shared_ptr<Token> const &head,
                  vector<shared_ptr<ASTNode>> const &children)
-    : node_type(node_type), head(head), children(children) {
-  this->head = head;
-  this->children = children;
-}
+    : node_type(node_type), head(head), children(children) {}
 
 ASTNode::ASTNode() {}
 
@@ -55,8 +50,7 @@ void ASTNode::print(shared_ptr<Agraph_t> const &graph) {
 
     switch (child->node_type) {
     case FUNCDEF: {
-      shared_ptr<FuncDefNode> funcdef =
-          dynamic_pointer_cast<FuncDefNode>(child);
+      shared_ptr<FuncDefNode> funcdef = static_pointer_cast<FuncDefNode>(child);
       funcdef->print(graph);
       agedge(graph.get(), graph_node.get(), funcdef->graph_node.get(), NULL,
              TRUE);
@@ -65,7 +59,7 @@ void ASTNode::print(shared_ptr<Agraph_t> const &graph) {
 
     case FUNCCALL: {
       shared_ptr<FuncCallNode> funccall =
-          dynamic_pointer_cast<FuncCallNode>(child);
+          static_pointer_cast<FuncCallNode>(child);
       funccall->print(graph);
       agedge(graph.get(), graph_node.get(), funccall->graph_node.get(), NULL,
              TRUE);
@@ -73,7 +67,7 @@ void ASTNode::print(shared_ptr<Agraph_t> const &graph) {
     }
 
     case LAMBDA: {
-      shared_ptr<LambdaNode> lambda = dynamic_pointer_cast<LambdaNode>(child);
+      shared_ptr<LambdaNode> lambda = static_pointer_cast<LambdaNode>(child);
       lambda->print(graph);
       agedge(graph.get(), graph_node.get(), lambda->graph_node.get(), NULL,
              TRUE);
@@ -81,28 +75,28 @@ void ASTNode::print(shared_ptr<Agraph_t> const &graph) {
     }
 
     case LIST: {
-      shared_ptr<ListNode> list = dynamic_pointer_cast<ListNode>(child);
+      shared_ptr<ListNode> list = static_pointer_cast<ListNode>(child);
       list->print(graph);
       agedge(graph.get(), graph_node.get(), list->graph_node.get(), NULL, TRUE);
       break;
     }
 
     case RETURN: {
-      shared_ptr<ReturnNode> ret = dynamic_pointer_cast<ReturnNode>(child);
+      shared_ptr<ReturnNode> ret = static_pointer_cast<ReturnNode>(child);
       ret->print(graph);
       agedge(graph.get(), graph_node.get(), ret->graph_node.get(), NULL, TRUE);
       break;
     }
 
     case COND: {
-      shared_ptr<CondNode> cond = dynamic_pointer_cast<CondNode>(child);
+      shared_ptr<CondNode> cond = static_pointer_cast<CondNode>(child);
       cond->print(graph);
       agedge(graph.get(), graph_node.get(), cond->graph_node.get(), NULL, TRUE);
       break;
     }
 
     case WHILE: {
-      shared_ptr<WhileNode> whilenode = dynamic_pointer_cast<WhileNode>(child);
+      shared_ptr<WhileNode> whilenode = static_pointer_cast<WhileNode>(child);
       whilenode->print(graph);
       agedge(graph.get(), graph_node.get(), whilenode->graph_node.get(), NULL,
              TRUE);
@@ -110,14 +104,14 @@ void ASTNode::print(shared_ptr<Agraph_t> const &graph) {
     }
 
     case PROG: {
-      shared_ptr<ProgNode> prog = dynamic_pointer_cast<ProgNode>(child);
+      shared_ptr<ProgNode> prog = static_pointer_cast<ProgNode>(child);
       prog->print(graph);
       agedge(graph.get(), graph_node.get(), prog->graph_node.get(), NULL, TRUE);
       break;
     }
 
     case SETQ: {
-      shared_ptr<SetqNode> setq = dynamic_pointer_cast<SetqNode>(child);
+      shared_ptr<SetqNode> setq = static_pointer_cast<SetqNode>(child);
       setq->print(graph);
       agedge(graph.get(), graph_node.get(), setq->graph_node.get(), NULL, TRUE);
       break;
@@ -567,37 +561,39 @@ shared_ptr<Token> flang::calculate(vector<shared_ptr<ASTNode>> const &args,
   }
 }
 
-ostream &flang::operator<<(ostream &os, const Token &token) {
-  os << token.value;
+wostream &flang::operator<<(wostream &os, const Token &token) {
+  os << token.value.c_str();
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const ASTNode &node) {
+wostream &flang::operator<<(wostream &os, const ASTNode &node) {
   if (node.node_type == BREAK) {
     os << "<break>";
     return os;
   }
 
-  os << node.head->value;
+  os << node.head->value.c_str();
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const FuncDefNode &node) {
-  os << "<function " << node.children[0]->head->value << ">";
+wostream &flang::operator<<(wostream &os, const FuncDefNode &node) {
+  string label = "<function " + node.children[0]->head->value + ">";
+  os << label.c_str();
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const FuncCallNode &node) {
-  os << "<function call " << node.children[0]->head->value << ">";
+wostream &flang::operator<<(wostream &os, const FuncCallNode &node) {
+  string label = "<function call " + node.children[0]->head->value + ">";
+  os << label.c_str();
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const LambdaNode &node) {
+wostream &flang::operator<<(wostream &os, const LambdaNode &node) {
   os << "<lambda>";
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const ListNode &node) {
+wostream &flang::operator<<(wostream &os, const ListNode &node) {
   os << "(";
   for (int i = 0; i < node.children.size(); i++) {
     os << *node.children[i];
@@ -608,27 +604,27 @@ ostream &flang::operator<<(ostream &os, const ListNode &node) {
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const ReturnNode &node) {
+wostream &flang::operator<<(wostream &os, const ReturnNode &node) {
   os << "<return>";
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const CondNode &node) {
+wostream &flang::operator<<(wostream &os, const CondNode &node) {
   os << "<cond>";
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const WhileNode &node) {
+wostream &flang::operator<<(wostream &os, const WhileNode &node) {
   os << "<while>";
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const ProgNode &node) {
+wostream &flang::operator<<(wostream &os, const ProgNode &node) {
   os << "<prog>";
   return os;
 }
 
-ostream &flang::operator<<(ostream &os, const SetqNode &node) {
+wostream &flang::operator<<(wostream &os, const SetqNode &node) {
   os << "<setq>";
   return os;
 }
