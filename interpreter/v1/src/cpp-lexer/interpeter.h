@@ -72,10 +72,10 @@ private:
   vector<Scope> stack;
 
   void interpret_program(shared_ptr<ASTNode> const &node);
-  void interpret_setq(shared_ptr<SetqNode> const &node);
-  void interpret_break(shared_ptr<ASTNode> const &node);
-  void interpret_while(shared_ptr<WhileNode> const &node);
 
+  shared_ptr<ASTNode> interpret_setq(shared_ptr<SetqNode> const &node);
+  shared_ptr<ASTNode> interpret_break(shared_ptr<ASTNode> const &node);
+  shared_ptr<ASTNode> interpret_while(shared_ptr<WhileNode> const &node);
   shared_ptr<ASTNode> interpret_lambda(shared_ptr<LambdaNode> const &node);
   shared_ptr<ASTNode> interpret_funccall(shared_ptr<FuncCallNode> const &node);
   shared_ptr<ASTNode> interpret_list(shared_ptr<ListNode> const &node);

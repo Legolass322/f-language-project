@@ -427,7 +427,7 @@ shared_ptr<ASTNode> pf_eval(vector<shared_ptr<ASTNode>> &args) {
             args[0]->children[0]->head,
             vector<shared_ptr<ASTNode>>(args[0]->children.begin() + 1,
                                         args[0]->children.end()));
-      else
+      else // TODO: add case for unknown func call
         return make_shared<FuncCallNode>(args[0]->children[0]->head,
                                          args[0]->children);
     }

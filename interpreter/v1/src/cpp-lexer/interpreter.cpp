@@ -92,7 +92,9 @@ void Interpreter::eval_result(shared_ptr<ASTNode> const &node,
 
 shared_ptr<ASTNode> Interpreter::interpret(shared_ptr<ASTNode> const &node) {
   if (node == nullptr)
-    return nullptr;
+    return make_shared<ASTNode>(
+        ASTNodeType::LEAF,
+        make_shared<Token>(TokenType::NUL, "null", Span({0, 0})));
 
   switch (node->node_type) {
   case ASTNodeType::PROGRAM:
@@ -111,23 +113,25 @@ shared_ptr<ASTNode> Interpreter::interpret(shared_ptr<ASTNode> const &node) {
   case ASTNodeType::RETURN:
     return interpret_return(static_pointer_cast<ReturnNode>(node));
   case ASTNodeType::BREAK:
-    interpret_break(node);
+    return interpret_break(node);
     break;
   case ASTNodeType::COND:
     return interpret_cond(static_pointer_cast<CondNode>(node));
   case ASTNodeType::WHILE:
-    interpret_while(static_pointer_cast<WhileNode>(node));
+    return interpret_while(static_pointer_cast<WhileNode>(node));
     break;
   case ASTNodeType::PROG:
     return interpret_prog(static_pointer_cast<ProgNode>(node));
   case ASTNodeType::SETQ:
-    interpret_setq(static_pointer_cast<SetqNode>(node));
+    return interpret_setq(static_pointer_cast<SetqNode>(node));
     break;
   case ASTNodeType::LEAF:
     return interpret_leaf(node);
   }
 
-  return nullptr;
+  return make_shared<ASTNode>(
+      ASTNodeType::LEAF,
+      make_shared<Token>(TokenType::NUL, "null", Span({0, 0})));
 }
 
 void Interpreter::interpret_program(shared_ptr<ASTNode> const &node) {
@@ -275,7 +279,9 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
     if (body->node_type == ASTNodeType::PROG) {
       for (auto &child : body->children) {
         if (child->node_type == ASTNodeType::SETQ) {
-          stack.back()[child->children[0]->head->value] = nullptr;
+          stack.back()[child->children[0]->head->value] = make_shared<ASTNode>(
+              ASTNodeType::LEAF,
+              make_shared<Token>(TokenType::NUL, "null", Span({0, 0})));
         }
       }
     }
@@ -288,14 +294,15 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
   }
 }
 
-void Interpreter::interpret_setq(shared_ptr<SetqNode> const &node) {
+shared_ptr<ASTNode>
+Interpreter::interpret_setq(shared_ptr<SetqNode> const &node) {
   auto const &name = node->getName()->value;
   auto const &value = node->getValue();
 
   for (int i = stack.size() - 1; i >= 0; i--) {
     if (stack[i].variables.find(name) != stack[i].variables.end()) {
       stack[i][name] = interpret(value);
-      return;
+      return node;
     }
 
     if (stack[i].inlined) {
@@ -304,13 +311,19 @@ void Interpreter::interpret_setq(shared_ptr<SetqNode> const &node) {
   }
 
   stack.back()[name] = interpret(value);
+
+  return node;
 }
 
-void Interpreter::interpret_break(shared_ptr<ASTNode> const &node) {
+shared_ptr<ASTNode>
+Interpreter::interpret_break(shared_ptr<ASTNode> const &node) {
   stack.back().break_flag = true;
+
+  return node;
 }
 
-void Interpreter::interpret_while(shared_ptr<WhileNode> const &node) {
+shared_ptr<ASTNode>
+Interpreter::interpret_while(shared_ptr<WhileNode> const &node) {
   stack.push_back(Scope(ASTNodeType::WHILE));
   while (true) {
     auto cond_res = interpret(node->getCond());
@@ -327,6 +340,8 @@ void Interpreter::interpret_while(shared_ptr<WhileNode> const &node) {
     }
   }
   stack.pop_back();
+
+  return node;
 }
 
 shared_ptr<ASTNode>
@@ -492,7 +507,7 @@ Interpreter::interpret_cond(shared_ptr<CondNode> const &node) {
     return interpret(node->getBranchFalse());
   }
 
-  return nullptr;
+  return node;
 }
 
 shared_ptr<ASTNode>
@@ -500,7 +515,9 @@ Interpreter::interpret_prog(shared_ptr<ProgNode> const &node) {
   stack.push_back(Scope(ASTNodeType::PROG, node->is_inlined));
 
   for (auto &loc : node->getLocals()->children) {
-    stack.back()[loc->head->value] = nullptr;
+    stack.back()[loc->head->value] = make_shared<ASTNode>(
+        ASTNodeType::LEAF,
+        make_shared<Token>(TokenType::NUL, "null", Span({0, 0})));
   }
 
   for (int i = 1; i < node->children.size() - 1; i++) {
@@ -513,7 +530,9 @@ Interpreter::interpret_prog(shared_ptr<ProgNode> const &node) {
     if (stack.back().break_flag) {
       stack.pop_back();
       stack.back().break_flag = true;
-      return nullptr;
+      return make_shared<ASTNode>(
+          ASTNodeType::LEAF,
+          make_shared<Token>(TokenType::NUL, "null", Span({0, 0})));
     }
 
     interpret(node->children[i]);
@@ -526,7 +545,9 @@ Interpreter::interpret_prog(shared_ptr<ProgNode> const &node) {
     if (stack.back().break_flag) {
       stack.pop_back();
       stack.back().break_flag = true;
-      return nullptr;
+      return make_shared<ASTNode>(
+          ASTNodeType::LEAF,
+          make_shared<Token>(TokenType::NUL, "null", Span({0, 0})));
     }
 
     stack.pop_back();
