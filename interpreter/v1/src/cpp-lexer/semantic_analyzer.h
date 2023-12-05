@@ -48,11 +48,11 @@ private:
   vector<Scope> scope_stack;
   int tmp_counter;
   const vector<string> PF_FUNCTIONS = {
-      "plus",    "minus",  "times",   "divide",    "equal",  "nonequal",
-      "less",    "lesseq", "greater", "greatereq", "and",    "or",
-      "not",     "xor",    "eval",    "isint",     "isreal", "isbool",
-      "isnull",  "isatom", "islist",  "head",      "tail",   "cons",
-      "isempty", "println"};
+      "plus",    "minus",   "times",      "divide",    "equal",  "nonequal",
+      "less",    "lesseq",  "greater",    "greatereq", "and",    "or",
+      "not",     "xor",     "eval",       "isint",     "isreal", "isbool",
+      "isnull",  "isatom",  "islist",     "head",      "tail",   "cons",
+      "isempty", "println", "_trampoline"};
 
   shared_ptr<ASTNode> analyze_funcdef(shared_ptr<FuncDefNode> node);
   shared_ptr<ASTNode> analyze_funccall(shared_ptr<FuncCallNode> node);
@@ -80,8 +80,8 @@ private:
 
   void mark_inlined_function(shared_ptr<Token> const &identifier);
 
-  shared_ptr<FuncCallNode>
-  is_recursive_call(shared_ptr<Token> const &identifier,
+  shared_ptr<ASTNode>
+  is_recursive_call(shared_ptr<FuncDefNode> const &funcdef,
                     vector<shared_ptr<ASTNode>> const &args);
 
   shared_ptr<ASTNode>

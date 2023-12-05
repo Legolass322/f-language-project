@@ -85,6 +85,8 @@ private:
   shared_ptr<ASTNode> interpret_leaf(shared_ptr<ASTNode> const &node);
   shared_ptr<ASTNode> interpret_funcdef(shared_ptr<FuncDefNode> const &node);
 
+  shared_ptr<ASTNode> interpret_trampoline(shared_ptr<ASTNode> node);
+
   shared_ptr<ASTNode>
   interpret_func_closure(shared_ptr<FuncDefNode> const &node);
   shared_ptr<ASTNode>

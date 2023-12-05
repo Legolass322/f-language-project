@@ -153,9 +153,60 @@ SemanticAnalyzer::remove_variable(shared_ptr<ASTNode> node, Scope &scope,
   throw VariableNotFoundError(node->head->span, identifier);
 }
 
-shared_ptr<FuncCallNode>
-SemanticAnalyzer::is_recursive_call(shared_ptr<Token> const &identifier,
+shared_ptr<FuncCallNode> wrap_trampoline(shared_ptr<ASTNode> node) {
+  shared_ptr<Token> identifier =
+      make_shared<Token>(IDENTIFIER, "_trampoline", node->head->span);
+  shared_ptr<ASTNode> head_node = make_shared<ASTNode>(LEAF, identifier);
+  vector<shared_ptr<ASTNode>> args = {head_node, node};
+  return make_shared<FuncCallNode>(head_node->head, args);
+}
+
+shared_ptr<LambdaNode> wrap_trampoline_lmd(shared_ptr<ASTNode> node) {
+  shared_ptr<Token> identifier =
+      make_shared<Token>(KEYWORD, "lambda", node->head->span);
+  vector<shared_ptr<ASTNode>> args = {make_shared<ListNode>(), node};
+  return make_shared<LambdaNode>(identifier, args);
+}
+
+bool is_tail_call(shared_ptr<ASTNode> node, string const &identifier) {
+  if (node->node_type == RETURN) {
+    auto return_node = static_pointer_cast<ReturnNode>(node);
+    if (return_node->getValue()->node_type == FUNCCALL) {
+      auto func_call =
+          static_pointer_cast<FuncCallNode>(return_node->getValue());
+      if (func_call->getName()->value == identifier) {
+        cout << "tail call found" << endl;
+        return true;
+      }
+    }
+  }
+
+  for (auto &child : node->children) {
+    if (is_tail_call(child, identifier))
+      return true;
+  }
+
+  return false;
+}
+
+shared_ptr<ASTNode>
+SemanticAnalyzer::is_recursive_call(shared_ptr<FuncDefNode> const &funcdef,
                                     vector<shared_ptr<ASTNode>> const &args) {
+  shared_ptr<Token> identifier = funcdef->getName();
+
+  if (funcdef->is_recursive) {
+    shared_ptr<ASTNode> head_node = make_shared<ASTNode>(
+        LEAF,
+        make_shared<Token>(IDENTIFIER, identifier->value, identifier->span));
+
+    vector<shared_ptr<ASTNode>> new_args = {head_node};
+    for (auto &arg : args) {
+      new_args.push_back(arg);
+    }
+
+    return make_shared<FuncCallNode>(head_node->head, new_args);
+  }
+
   for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
     if (it->scope_node->node_type == FUNCDEF) {
       auto funcdef_node = static_pointer_cast<FuncDefNode>(it->scope_node);
@@ -174,6 +225,13 @@ SemanticAnalyzer::is_recursive_call(shared_ptr<Token> const &identifier,
 #ifdef DEBUG
         cout << "recursive call found" << endl;
 #endif
+        funcdef_node->is_tail_recursive = is_tail_call(
+            funcdef_node->getBody(), funcdef_node->getName()->value);
+
+        if (funcdef_node->is_tail_recursive) {
+          return wrap_trampoline_lmd(
+              make_shared<FuncCallNode>(head_node->head, new_args));
+        }
         return make_shared<FuncCallNode>(head_node->head, new_args);
       }
     }
@@ -221,9 +279,23 @@ shared_ptr<ASTNode> SemanticAnalyzer::get_inlined_function(
   cout << "get_inlined_function" << endl;
 #endif
 
+  // check if function is tail recursive
+  if (funcdef->is_tail_recursive) {
+    shared_ptr<ASTNode> head_node = make_shared<ASTNode>(
+        LEAF, make_shared<Token>(IDENTIFIER, funcdef->getName()->value,
+                                 funcdef->getName()->span));
+    vector<shared_ptr<ASTNode>> new_args = {head_node};
+    for (auto &arg : args) {
+      new_args.push_back(arg);
+    }
+    shared_ptr<FuncCallNode> func_call =
+        make_shared<FuncCallNode>(head_node->head, new_args);
+
+    return wrap_trampoline(func_call);
+  }
+
   // check for recursive calls
-  shared_ptr<FuncCallNode> recursive_call =
-      is_recursive_call(funcdef->getName(), args);
+  shared_ptr<ASTNode> recursive_call = is_recursive_call(funcdef, args);
 
   if (recursive_call != nullptr) {
     return recursive_call;

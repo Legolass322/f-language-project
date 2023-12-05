@@ -67,8 +67,9 @@ public:
 
 class FuncDefNode : public ASTNode {
 public:
-  bool is_recursive = false;
+  bool is_recursive;
   bool is_inlined = false;
+  bool is_tail_recursive;
   shared_ptr<Token> getName();
   shared_ptr<ASTNode> getBody();
   shared_ptr<ASTNode> getParams();
@@ -81,7 +82,7 @@ public:
 
   FuncDefNode(shared_ptr<Token> const &head,
               vector<shared_ptr<ASTNode>> const &children,
-              bool is_recursive = false);
+              bool is_recursive = false, bool is_tail_recursive = false);
 
   void print(shared_ptr<Agraph_t> const &graph) override;
   shared_ptr<ASTNode> copy() override;

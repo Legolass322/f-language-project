@@ -143,9 +143,10 @@ FuncDefNode::FuncDefNode() {}
 
 FuncDefNode::FuncDefNode(shared_ptr<Token> const &head,
                          vector<shared_ptr<ASTNode>> const &children,
-                         bool is_recursive)
+                         bool is_recursive, bool is_tail_recursive)
     : ASTNode(FUNCDEF, head, children) {
   this->is_recursive = is_recursive;
+  this->is_tail_recursive = is_tail_recursive;
 }
 
 shared_ptr<Token> FuncDefNode::getName() { return children[0]->head; }
@@ -170,7 +171,8 @@ shared_ptr<ASTNode> FuncDefNode::copy() {
     children_copy.push_back(child->copy());
   }
 
-  return make_shared<FuncDefNode>(head, children_copy, is_recursive);
+  return make_shared<FuncDefNode>(head, children_copy, is_recursive,
+                                  is_tail_recursive);
 }
 
 void FuncDefNode::print(shared_ptr<Agraph_t> const &graph) {

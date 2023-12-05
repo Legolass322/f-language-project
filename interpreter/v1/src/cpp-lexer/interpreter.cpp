@@ -156,6 +156,18 @@ Interpreter::interpret_funcdef(shared_ptr<FuncDefNode> const &node) {
 }
 
 shared_ptr<ASTNode>
+Interpreter::interpret_trampoline(shared_ptr<ASTNode> node) {
+  while (node->node_type == ASTNodeType::LAMBDA) {
+    auto funccall = make_shared<FuncCallNode>(
+        make_shared<Token>(TokenType::NUL, "unknown", Span({0, 0})),
+        vector<shared_ptr<ASTNode>>{node});
+    node = interpret_funccall(funccall);
+  }
+
+  return node;
+}
+
+shared_ptr<ASTNode>
 Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
   if (node->children[0]->node_type != LEAF) {
 
@@ -223,6 +235,10 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
     auto const &name = node->getName()->value;
     auto const &args = node->getArgs();
 
+    if (name == "_trampoline") {
+      return interpret_trampoline(interpret(args[0]));
+    }
+
     if (find(PF_FUNCS.begin(), PF_FUNCS.end(), name) != PF_FUNCS.end()) {
       vector<shared_ptr<ASTNode>> v_args;
       for (auto const &arg : args) {
@@ -258,6 +274,15 @@ Interpreter::interpret_funccall(shared_ptr<FuncCallNode> const &node) {
 
         return interpret_funccall(
             make_shared<FuncCallNode>(v_args[0]->head, v_args));
+      }
+
+      cout << "stack size: " << stack.size() << endl;
+      for (int i = stack.size() - 1; i >= 0; i--) {
+        cout << "scope " << i << ": ";
+        for (auto const &var : stack[i].variables) {
+          cout << var.first << ' ';
+        }
+        cout << endl;
       }
 
       throw runtime_error(name + " is not a function");
@@ -412,7 +437,7 @@ Interpreter::interpret_lambda_closure(shared_ptr<LambdaNode> const &node) {
   lambda->setBody(make_shared<ProgNode>(
       make_shared<Token>(TokenType::KEYWORD, "prog", Span({0, 0})), children));
 
-  generate_graph_svg(lambda, "closure.svg");
+  // generate_graph_svg(lambda, "closure.svg");
 
   return lambda;
 }
@@ -491,8 +516,13 @@ void Interpreter::iterate_closure(shared_ptr<ASTNode> const &node,
     }
   }
 
-  for (auto const &child : node->children) {
-    iterate_closure(child, setqs, defined);
+  for (int i = 0; i < node->children.size(); i++) {
+    if ((node->node_type == PROG || node->node_type == FUNCCALL ||
+         node->node_type == FUNCDEF) &&
+        i == 0)
+      continue;
+
+    iterate_closure(node->children[i], setqs, defined);
   }
 }
 
