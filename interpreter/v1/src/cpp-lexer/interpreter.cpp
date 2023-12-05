@@ -486,7 +486,7 @@ Interpreter::interpret_func_closure(shared_ptr<FuncDefNode> const &node) {
   funcdef->setBody(make_shared<ProgNode>(
       make_shared<Token>(TokenType::KEYWORD, "prog", Span({0, 0})), children));
 
-  generate_graph_svg(funcdef, "closure.svg");
+  // generate_graph_svg(funcdef, "closure.svg");
 
   return funcdef;
 }
