@@ -752,6 +752,9 @@ shared_ptr<ASTNode> SemanticAnalyzer::analyze_break(shared_ptr<ASTNode> node) {
     switch (it->scope_node->node_type) {
     case WHILE:
       return node;
+    case LAMBDA:
+    case FUNCDEF:
+      throw RuntimeError(node->head->span, "Break is not allowed here");
     default:
       break;
     }

@@ -31,7 +31,25 @@ void Interpreter::eval_result(shared_ptr<ASTNode> const &node,
   case ASTNodeType::QUOTE_LIST: {
     wcout << "'";
     auto quote_list_node = static_pointer_cast<ListNode>(node);
-    wcout << *quote_list_node.get();
+    bool all_leaf = true;
+    for (auto const &child : quote_list_node->children) {
+      if (child->node_type != ASTNodeType::LEAF) {
+        all_leaf = false;
+        break;
+      }
+    }
+
+    if (all_leaf)
+      wcout << *quote_list_node.get();
+    else {
+      wcout << '(';
+      for (int i = 0; i < quote_list_node->children.size(); i++) {
+        eval_result(quote_list_node->children[i], true);
+        if (i != quote_list_node->children.size() - 1)
+          wcout << ' ';
+      }
+      wcout << ')';
+    }
     break;
   }
   case ASTNodeType::FUNCDEF: {
@@ -353,7 +371,7 @@ Interpreter::interpret_while(shared_ptr<WhileNode> const &node) {
   while (true) {
     auto cond_res = interpret(node->getCond());
 
-    if (stack.back().break_flag) {
+    if (stack.back().break_flag || stack.back().return_value) {
       break;
     }
 
@@ -364,6 +382,14 @@ Interpreter::interpret_while(shared_ptr<WhileNode> const &node) {
       break;
     }
   }
+
+  if (stack.back().return_value) {
+    auto res = stack.back().return_value;
+    stack.pop_back();
+    stack.back().return_value = res;
+    return res;
+  }
+
   stack.pop_back();
 
   return node;

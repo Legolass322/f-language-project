@@ -160,6 +160,7 @@ int main(int argc, char *argv[]) {
       }
     } else if (!drv.parse(argv[i])) {
       std::cout << "Parsing successful" << '\n';
+      generate_graph_svg(drv.ast, "after_parsing.svg");
       semantic_analyzer.analyze(drv.ast);
       std::cout << "Semantic analysis successful" << '\n';
       generate_graph_svg(drv.ast);

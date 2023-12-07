@@ -42,10 +42,8 @@
 %token <std::string> SYM_LPAREN "(" 
 %token <std::string> SYM_RPAREN ")" 
 %token <std::string> SYM_QUOTE "'"
-%token <std::string> SYM_DQUOTE "\""
 
 %left SYM_LPAREN SYM_RPAREN
-%left PF_PLUS PF_TIMES PF_DIVIDE PF_MINUS
 
 %type <std::shared_ptr<FuncDefNode>> func_def
 %type <std::shared_ptr<LambdaNode>> lambda_def
