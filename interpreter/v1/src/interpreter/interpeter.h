@@ -1,9 +1,9 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "ast.h"
-#include "pf_funcs.h"
-#include "utils.h"
+#include "../parser/ast.h"
+#include "../utils/pf_funcs.h"
+#include "../utils/utils.h"
 #include <algorithm>
 #include <iostream>
 #include <map>

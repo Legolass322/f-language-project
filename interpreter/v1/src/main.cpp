@@ -1,8 +1,8 @@
-#include "ast.h"
-#include "driver.hh"
-#include "interpeter.h"
-#include "semantic_analyzer.h"
-#include "utils.h"
+#include "interpreter/interpeter.h"
+#include "parser/ast.h"
+#include "parser/driver.hh"
+#include "semantic/semantic_analyzer.h"
+#include "utils/utils.h"
 #include <graphviz/gvc.h>
 #include <iostream>
 #include <locale.h>

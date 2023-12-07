@@ -1,8 +1,8 @@
 #ifndef PF_FUNCS_H
 #define PF_FUNCS_H
 
-#include "ast.h"
-#include "semantic_analyzer.h"
+#include "../parser/ast.h"
+#include "../semantic/semantic_analyzer.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>

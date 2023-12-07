@@ -1,8 +1,8 @@
 #ifndef SEMANTIC_ANALYZER_H
 #define SEMANTIC_ANALYZER_H
 
-#include "ast.h"
-#include "driver.hh"
+#include "../parser/ast.h"
+#include "../parser/driver.hh"
 #include <algorithm>
 #include <iostream>
 #include <map>

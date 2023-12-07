@@ -13,12 +13,12 @@ void generate_graph_svg(std::shared_ptr<flang::ASTNode> const &ast,
 
   ast->print(ast_graph);
 
-  FILE *astdot = fopen((char *)"ast.dot", (char *)"w");
+  FILE *astdot = fopen((char *)"svg/ast.dot", (char *)"w");
   agwrite(ast_graph.get(), astdot);
 
   fclose(astdot);
   gvFreeContext(gvc);
 
-  std::string cmd = "dot -Tsvg ast.dot > " + filename;
+  std::string cmd = "dot -Tsvg svg/ast.dot > svg/" + filename;
   system(cmd.c_str());
 }

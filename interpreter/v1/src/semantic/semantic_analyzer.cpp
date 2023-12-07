@@ -1,5 +1,5 @@
 #include "semantic_analyzer.h"
-#include "pf_funcs.h"
+#include "../utils/pf_funcs.h"
 
 // #define DEBUG
 

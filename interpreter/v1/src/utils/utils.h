@@ -1,7 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "ast.h"
+#include "../parser/ast.h"
 #include <memory>
 
 void generate_graph_svg(std::shared_ptr<flang::ASTNode> const &ast,

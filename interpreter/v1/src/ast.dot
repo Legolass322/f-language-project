@@ -1,9 +1,0 @@
-digraph ast {
-	node [label="\N"];
-	"%41"	[label=program];
-	"%43"	[label="FuncCallNode
-unknown"];
-	"%41" -> "%43";
-	"%45"	[label=4];
-	"%43" -> "%45"	[label=arg];
-}
