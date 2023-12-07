@@ -1,0 +1,11 @@
+(func test (x) (prog ()
+  (while true (prog ()
+    (cond (equal x 0) (break))
+  ))
+
+  (cond (equal x 0) (return 0))
+
+  (return 1)
+))
+
+(test 0)

@@ -1,0 +1,127 @@
+; high order functions
+(require "utils")
+
+(func binaryToDecimal (binary) 
+  (foldl (lambda (value item) (plus (times 2 value) item)) 0 binary))
+
+(func incrementer (nTimes num) 
+  (cond (equal nTimes 0) num (incrementer (minus nTimes 1) (plus num 1))))
+
+(func length (lst) (prog ()
+  (func helper (lst acc)
+    (cond (isempty lst) acc (helper (tail lst) (plus acc 1))))
+  
+  (helper lst 0)
+))
+
+(func ntail (n lst) (cond (equal n 0) lst (ntail (minus n 1) (tail lst))))
+
+(func splitstr (lst ch) (prog ()
+  (setq result '())
+  (setq subres '())
+  (setq iter lst)
+
+  (while true (prog ()
+    (cond (isempty iter)
+      (prog ()
+        (setq result (cons (reverse subres) result))
+        (break)))
+
+    (cond (equal (head iter) ch)
+      (prog ()
+        (setq result (cons (reverse subres) result))
+        (setq subres '())
+      ) 
+      (setq subres (cons (head iter) subres)) 
+    )
+
+    (setq iter (tail iter))
+  ))
+
+  (return (reverse result))
+))
+
+(func shadowingTest () (prog ()
+  (setq test 1)
+  (println test) ; 1
+
+  (prog (test) ; add test to local scope
+    (setq test 2)
+    (println test) ; 2
+  )
+
+  (println test) ; 1
+))
+
+(func clojureTest (y) (prog ()
+  (func test () (return y))
+  (return test)
+))
+
+(func scopeTest2 (x) (prog ()
+  (prog ()
+    (setq iter x)
+    (println "iter inside scopeTest2:" iter)
+  )
+))
+
+(func scopeTest1 (x) (prog ()
+  (setq iter x)
+
+  (scopeTest2 5)
+  (return iter)
+))
+
+; Sum from 1 to 10 squares
+(println "Sum from 1 to 10 squares")
+(setq sumSquares (foldl plus 0 (map (lambda (x) (times x x)) '(1 2 3 4 5 6 7 8 9 10))))
+(println sumSquares)
+(println "Passed")
+
+; recursive call test
+(println "Recursive call test")
+(println (incrementer 5 1))
+(println "Passed")
+
+; setq lambda test
+(println "setq lambda test")
+(setq lmd (lambda (a1 a2) (plus (times a1 a1) (times a2 a2))))
+(println (lmd 5 6))
+(println "Passed")
+
+; eval test
+(println "eval test")
+(setq lst '(map (lambda (x) (times x x)) '(1 2 3 4 5 6 7 8 9 10)))
+(println "Passed")
+
+; clojure test
+(println "clojure test")
+(setq clt (clojureTest 5))
+(println (clt))
+(println "Passed")
+
+; shadowing test
+(println "shadowing test")
+(shadowingTest)
+(println "Passed")
+
+; splitstr test
+(println "splitstr test")
+(println (splitstr "abczdef" 'z))
+(println "Passed")
+
+; foldl map test
+(println "foldl map test")
+(println (foldl plus 0 (map (lambda (x) (times x x)) '(1 2 3 4 5 6 7 8 9 10))))
+(println "Passed")
+
+; lambda eval test
+(println "lambda eval test")
+(println (((lambda (x) (cond (equal x 0) plus minus)) 1) 2 1))
+(println "Passed")
+
+; scope test
+(println "scope test")
+(println "iter inside scopeTest1:" (scopeTest1 10))
+(println "Passed")
+
